@@ -1,0 +1,156 @@
+/*
+ *
+ * Example 2x3x2 structure
+ * =======================
+ *
+ * Rect---+---Map---+---Array---+---Vector---+---double
+ *                  |           |             \--double
+ *                  |           +---Vector---+---double
+ *                  |           |             \--double
+ *                  |            \--Vector---+---double
+ *                  |                         \--double
+ *                   \--Array---+---Vector---+---double
+ *                              |             \--double
+ *                              +---Vector---+---double
+ *                              |             \--double
+ *                               \--Vector---+---double
+ *                                            \--double
+ * 
+ * References
+ * ==========
+ * 
+ * Each of Rect, Map, Array, and Vector contains a member 'ref' which is
+ * an SV* pointing to an RV. The RV can be returned directly to perl-land
+ * after being blessed into its respective class.
+ * 
+ * The RV references an SV containing an IV. The IV is set to the base
+ * address of its component structure. This is so the class code can know
+ * which instance of the class is being referred to on callback.
+ * 
+ * The reference count of the SV has its initial reference count set to one,
+ * representing its parents ownership. If a parent dies or a perl-land
+ * reference is taken of any componenet, its reference count should
+ * be adjusted accordingly.
+ * 
+ * When the count reaches zero perl will call the classes DESTROY method,
+ * at which point we can decrease the reference count on each child and
+ * free the component structure.
+ * 
+ * The intent of all this reference count tom-foolery is to keep the
+ * component structures from disappearing from underneath perl-land
+ * references to them. As a bonus, we get a neat destruction mechanism
+ * without having to reimplement OOP in C.
+ */
+
+/*
+ * SOM_Vector : holds _Z doubles
+ *
+ * should be allocated:
+ *	sizeof(SOM_Vector) + sizeof(double)*(_Z-1)
+ *
+ * this is enough space to use the 'element' member as the base of an array
+ * of _Z doubles.
+ *
+ * the 'ref' element is a pointer to a perl RV referencing a tied array.
+ * a copy of 'ref' will be returned to the perl side on request, and the
+ * tied array interface can be use to access the members of this struct.
+ *
+ * '_Z' is of course the number of doubles in the 'element' array.
+ */
+typedef struct {
+	SV *ref;
+	long _Z;
+	double element;
+} SOM_Vector;
+
+/*
+ * SOM_Array : holds _Y ptrs to SOM_Vector thingys
+ *
+ * should be allocated:
+ *	sizeof(SOM_Array) + sizeof(SOM_Vector*)*(_Y-1)
+ *
+ * 'ref' and 'vector' elements similar in functionality to the 'ref' and
+ * 'element' members, respectively, of the SOM_Vector struct.
+ *
+ * '_Y' is the number of SOM_Vector pointers in the 'vector' array.
+ *
+ * '_Z' is provided here only for propogation down the line in creating
+ * the SOM_Vectors.
+ */
+typedef struct {
+	SV *ref;
+	long _Y;
+	long _Z;
+	SOM_Vector *vector;
+} SOM_Array;
+
+/*
+ * SOM_Map : holds _X ptrs to SOM_Array thingys
+ *
+ * should be allocated:
+ *	sizeof(SOM_Map) + sizeof(SOM_Array*)*(_X-1)
+ *
+ * 'ref' and 'array' are similar in functionality to the 'ref' and 'element'
+ * members, respectively, of the SOM_Vector struct.
+ *
+ * '_X' is the number of SOM_Array pointers in the 'array' array.
+ *
+ * '_Y' and '_Z' are provided here only for propagation down the line in
+ * creation of SOM_Array and SOM_Vector structs.
+ */
+typedef struct {
+	SV *ref;
+	long _X;
+	long _Y;
+	long _Z;
+	SOM_Array *array;
+} SOM_Map;
+
+/*
+ * SOM_Rect : holds a ptr to a single SOM_Map thingy
+ *
+ * should be allocated:
+ *	sizeof(SOM_Rect)
+ *
+ * this struct is the main object.
+ *
+ * '_X', '_Y', and '_Z' are held here for progagation down to the structs
+ * that make up our grid map.
+ *
+ * '_R'      = initial SOM radius
+ * '_Sigma0' = ???
+ * '_L0'     = initial SOM learning rate
+ *
+ * 'output_dim' is kept from instantiation simply because the perl interface
+ * already provides access to it.
+ */
+typedef struct {
+	SV *ref;
+	long _X;
+	long _Y;
+	long _Z;
+	double _R;
+	double _Sigma0;
+	double _L0;
+	double LAMBDA;
+	double T;
+	int type;
+	SV *output_dim;
+	AV *labels;
+	SOM_Map *map;
+} SOM_GENERIC;
+
+typedef SOM_GENERIC SOM_Rect;
+typedef SOM_GENERIC SOM_Torus;
+typedef SOM_GENERIC SOM_Hexa;
+
+enum SOMType {
+	SOMType_Hexa,
+	SOMType_Rect,
+	SOMType_Torus
+};
+
+typedef AV AV_SPECIAL;
+
+#include "FastSOM-decl.h"
+

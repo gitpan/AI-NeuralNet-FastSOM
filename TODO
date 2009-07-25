@@ -1,0 +1,10 @@
+
+- clean up!
+
+- clean up most instances of newAV() with av_undef().
+  in other words, seek and destroy memory leaks!
+
+- make function declarations in header file.
+
+- figure out how to call perl's exp(), log() and getpid() functions.
+
