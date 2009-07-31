@@ -110,9 +110,8 @@ BEGIN { use_ok('AI::NeuralNet::FastSOM::Hexa') };
 #    warn Dumper $nn;
 }
 
-use File::Temp 'tempfile';
-use Storable qw/store retrieve/;
-my ($file,$bmu_x,$bmu_y);
+use Storable qw/store/;
+my ($bmu_x,$bmu_y);
 {
         my $nn = AI::NeuralNet::FastSOM::Hexa->new(
                 output_dim => 3,
@@ -125,15 +124,11 @@ my ($file,$bmu_x,$bmu_y);
 
         ($bmu_x,$bmu_y) = $nn->bmu([3,2,4]);
 
-        $file = tempfile();
-        store( $nn, $file );
-}
-{
-        my $nn = retrieve( $file );
-        my ($x,$y) = $nn->bmu([3,2,4]);
-        is( $x, $bmu_x, 'stored x' );
-        is( $y, $bmu_y, 'stored y' );
-	unlink $file;
+	ok( open(FILE, '> t/save_hexa_bmu.bin'), 'hexa save' );
+	print FILE "$bmu_x\n$bmu_y\n";
+	close FILE;
+
+	store( $nn, 't/save_hexa.bin' );
 }
 
 __END__

@@ -1,5 +1,13 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.08  Fri Jul 31 16:17:32 2009
+	- removed leading underscore from struct member names
+	- removed all // comments, just in case...
+	- changed all native type (int,double) to perl types (IV,NV)
+	- fixed couple of instances of calling back to perl to get
+	  stuff from c structs
+	- reworked Storable support
+
 0.07  Sat Jul 25 14:18:03 2009
 	- clean up things a bit
 	- now using Atol() instead of atoi()

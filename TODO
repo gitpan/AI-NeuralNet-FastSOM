@@ -1,10 +1,10 @@
+- test older perls. at least drop version requirement back as far as will
+  work with what we have now.
 
 - clean up!
 
 - clean up most instances of newAV() with av_undef().
   in other words, seek and destroy memory leaks!
-
-- make function declarations in header file.
 
 - figure out how to call perl's exp(), log() and getpid() functions.
 

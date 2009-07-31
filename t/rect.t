@@ -34,26 +34,17 @@ BEGIN { use_ok('AI::NeuralNet::FastSOM::Rect') };
 	ok( $a != $m1, 'array unique' );
 
 	my $a2 = $m4->[0];
-	if ( !is( $a, $a2, 'array eq' ) ) {
-		warn "not equal:\n";
-		warn "    $a\n    $a2\n";
-	}
+	is( $a, $a2, 'array eq' );
 
 	my $v = $a->[0];
 	isa_ok( $v, 'ARRAY', 'vector array' );
 	ok( $v != $a, 'vector unique' );
 
 	my $v2 = $nn3->map->[0]->[0];
-	if ( !is( $v, $v2, 'vector eq' ) ) {
-		warn "not equal:\n";
-		warn "    $v\n";
-		warn "    $v2\n";
-	}
+	is( $v, $v2, 'vector eq' );
+
 	my $v3 = $nn2->map->[0][0];
-	if ( !is( $v, $v3, 'vector shorter' ) ) {
-		warn "not equal:\n";
-		warn "    $v\n    $v3\n";
-	}
+	is( $v, $v3, 'vector shorter' );
 
 	my $m = $nn->map;
 	$m->[0][0][0] = 3.245;
@@ -161,9 +152,8 @@ BEGIN { use_ok('AI::NeuralNet::FastSOM::Rect') };
 	is( @k, 10, 'array rect key count' );
 }
 
-use File::Temp 'tempfile';
-use Storable qw/store retrieve/;
-my ($file,$bmu_x,$bmu_y);
+use Storable qw/store/;
+my ($bmu_x,$bmu_y);
 {
 	my $nn = AI::NeuralNet::FastSOM::Rect->new(
 		output_dim => '5x6',
@@ -176,15 +166,11 @@ my ($file,$bmu_x,$bmu_y);
 
 	($bmu_x,$bmu_y) = $nn->bmu([3,2,4]);
 
-	$file = tempfile();
-	store( $nn, $file );
-}
-{
-	my $nn = retrieve( $file );
-	my ($x,$y) = $nn->bmu([3,2,4]);
-	is( $x, $bmu_x, 'stored x' );
-	is( $y, $bmu_y, 'stored y' );
-	unlink $file;
+	ok( open(FILE, '> t/save_rect_bmu.bin'), 'rect save' );
+	print FILE "$bmu_x\n$bmu_y\n";
+	close FILE;
+
+	store( $nn, 't/save_rect.bin' );
 }
 
 __END__

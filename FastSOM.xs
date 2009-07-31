@@ -8,11 +8,11 @@ FYI...
 
         SOM_GENERIC *rect =
                 (SOM_GENERIC*)SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)));
-        NV _X = generic->_X;
+        IV X = generic->X;
 
 is apparently same as...
 
-        NV _X = SvNV(*hv_fetchs((HV*)SvRV(self), "_X", FALSE));
+        IV X = SvNV(*hv_fetchs((HV*)SvRV(self), "X", FALSE));
 
 pros and cons ???
 
@@ -24,12 +24,14 @@ pros and cons ???
 
 #include <math.h>
 #include "FastSOM.h"
+#include "proto.h"
 
 
 NV _vector_distance(AV* V1, AV* V2) {
-	NV diff;
-	I32 w_ptr;
-	NV sum = 0;
+	register NV	diff,sum;
+	register I32	w_ptr;
+
+	sum = 0;
 
 	for ( w_ptr=av_len(V2) ; w_ptr>=0 ; w_ptr-- ) {
 		diff = SvNV(*av_fetch(V1, w_ptr, FALSE))
@@ -40,7 +42,7 @@ NV _vector_distance(AV* V1, AV* V2) {
 }
 
 void _bmu_guts(SOM_GENERIC *generic,AV *sample,IV *bx,IV *by,NV *bd) {
-	IV		x,y,z,_X,_Y,_Z;
+	IV		x,y,z,X,Y,Z;
 	AV		*grid_v;
 	NV		distance;
 	SOM_Map		*map;
@@ -48,9 +50,9 @@ void _bmu_guts(SOM_GENERIC *generic,AV *sample,IV *bx,IV *by,NV *bd) {
 	SOM_Vector	*vector;
 
 	map = generic->map;
-	_X = generic->_X;
-	_Y = generic->_Y;
-	_Z = generic->_Z;
+	X = generic->X;
+	Y = generic->Y;
+	Z = generic->Z;
 
 	*bx = -1;
 	*by = 0;
@@ -58,14 +60,14 @@ void _bmu_guts(SOM_GENERIC *generic,AV *sample,IV *bx,IV *by,NV *bd) {
 
 	grid_v = newAV();
 
-	for ( x=0 ; x<_X ; x++ ) {
+	for ( x=0 ; x<X ; x++ ) {
 		array = (SOM_Array*)(&map->array)[x];
-		for ( y=0 ; y<_Y ; y++ ) {
+		for ( y=0 ; y<Y ; y++ ) {
 			vector = (SOM_Vector*)(&array->vector)[y];
 
 			/* $self->{map}[$x][$y] */
 			av_clear(grid_v);
-			for ( z=0 ; z<_Z ; z++ )
+			for ( z=0 ; z<Z ; z++ )
 				av_push(grid_v,newSVnv((&vector->element)[z]));
 
 			distance = _vector_distance(sample,grid_v);
@@ -125,7 +127,7 @@ void _adjust(SV* self,NV l,NV sigma,AV* unit,AV* v) {
 	array = (SOM_Array*)(&map->array)[x];
 	vector = (SOM_Vector*)(&array->vector)[y];
 
-	for ( z=0 ; z<generic->_Z ; z++ ) {
+	for ( z=0 ; z<generic->Z ; z++ ) {
 		wold = (&vector->element)[z];
 		vold = SvNV(*av_fetch(v,z,FALSE));
 		(&vector->element)[z] = (vold - wold) * l * theta + wold;
@@ -133,11 +135,10 @@ void _adjust(SV* self,NV l,NV sigma,AV* unit,AV* v) {
 }
 
 void _som_new(const char* self,...) { croak("Dont use this class directly\n"); }
-
-void _som_bmu(SV* self,...)       { croak("unsupported"); }
-void _som_neighbors(SV* self,...) { croak("unsupported"); }
-void _som_as_string(SV* self,...) { croak("unsupported"); }
-void _som_as_data(SV* self,...)   { croak("unsupported"); }
+void _som_bmu(SV* self,...)         { croak("unsupported"); }
+void _som_neighbors(SV* self,...)   { croak("unsupported"); }
+void _som_as_string(SV* self,...)   { croak("unsupported"); }
+void _som_as_data(SV* self,...)     { croak("unsupported"); }
 
 SV* map(SV* self) {
         MAGIC		*mg;
@@ -172,17 +173,17 @@ SV* output_dim(SV* self) {
  */
 
 SOM_Vector* _make_vector(SOM_Array* array) {
-	int		z;
+	IV		z;
 	AV		*thingy;
 	SV		*tie;
 	HV		*stash;
 	SOM_Vector	*vector;
 
-        z = array->_Z;
+        z = array->Z;
 
         Newxz( vector, sizeof(SOM_Vector) + z * sizeof(double), void );
 
-        vector->_Z = z;
+        vector->Z = z;
 
         thingy = newAV();
         tie = newRV_noinc(newSViv((IV)vector));
@@ -200,18 +201,18 @@ SOM_Vector* _make_vector(SOM_Array* array) {
 }
 
 SOM_Array* _make_array(SOM_Map* map) {
-	int		y;
+	IV		y;
 	AV		*thingy;
 	SV		*tie;
 	HV		*stash;
 	SOM_Array	*array;
 
-	y = map->_Y;
+	y = map->Y;
 
 	Newxz( array, sizeof(SOM_Array) + y * sizeof(SOM_Vector*), void );
 
-	array->_Y = y;
-	array->_Z = map->_Z;
+	array->Y = y;
+	array->Z = map->Z;
 
 	thingy = newAV();
 	tie = newRV_noinc(newSViv((IV)array));
@@ -228,19 +229,19 @@ SOM_Array* _make_array(SOM_Map* map) {
 }
 
 SOM_Map* _make_map(SOM_GENERIC *generic) {
-	int	x;
+	IV	x;
 	SOM_Map	*map;
 	AV	*thingy;
 	SV	*tie;
 	HV	*stash;
 
-	x = generic->_X;
+	x = generic->X;
 
 	Newxz( map, sizeof(SOM_Map) + x * sizeof(SOM_Array*), void );
 
-	map->_X = x;
-	map->_Y = generic->_Y;
-	map->_Z = generic->_Z;
+	map->X = x;
+	map->Y = generic->Y;
+	map->Z = generic->Z;
 
 	thingy = newAV();
 	tie = newRV_noinc(newSViv((IV)map));
@@ -289,11 +290,11 @@ void _som_train(SV* self) {
 		if ( SvTYPE(SvRV(ST(i))) != SVt_PVAV )
 			croak("training item %i is not an array ref", i);
 
-	generic->LAMBDA = epochs / log( generic->_Sigma0 );
+	generic->LAMBDA = epochs / log( generic->Sigma0 );
 
-	x = generic->_X;
-	y = generic->_Y;
-	z = generic->_Z;
+	x = generic->X;
+	y = generic->Y;
+	z = generic->Z;
 
 	mes = newAV();
 	veggies = newAV();
@@ -305,8 +306,8 @@ void _som_train(SV* self) {
 
 	for ( epoch=1 ; epoch<=epochs ; epoch++ ) {
 		generic->T = epoch;
-		sigma = generic->_Sigma0 * exp(-generic->T / generic->LAMBDA);
-		l = generic->_L0 * exp(-generic->T / epochs);
+		sigma = generic->Sigma0 * exp(-generic->T / generic->LAMBDA);
+		l = generic->L0 * exp(-generic->T / epochs);
 
 		for ( i=2 ; i<items ; i++ )
 			av_push(veggies,SvREFCNT_inc(ST(i)));
@@ -338,8 +339,6 @@ void _som_train(SV* self) {
 			while ( av_len(ntmp) >= 0 )
 				_adjust(self,l,sigma,(AV*)SvRV(av_pop(ntmp)),
 					(AV*)SvRV(sample));
-
-			//SvREFCNT_dec(sample);
 		}
 	}
 
@@ -349,15 +348,140 @@ void _som_train(SV* self) {
 	PUTBACK;
 }
 
+void _som_FREEZE(SV* self,SV* cloning) {
+	IV		x,y,z;
+	MAGIC		*mg;
+	SOM_Map		*m;
+	SOM_Array	*a;
+	SOM_Vector	*v;
+	SOM_GENERIC	*generic;
+	dXSARGS;
+
+	sp = mark;
+
+	if ( !SvTRUE(cloning) ) {
+
+	if ( (mg = SvTIED_mg((SV*)SvRV(self), PERL_MAGIC_tied)) != NULL) {
+
+		/*
+		 * we should get here on the first pass. this is where we
+		 * serialize the hash seen from perl.
+		 */
+
+		XPUSHs(newSVpvs("i wanna be a cowboy"));
+
+	}
+	else if ( SvTYPE(SvRV(self)) == SVt_PVMG ) {
+
+		/*
+		 * this should be the second pass. here we need to serialize
+		 * the tied part not seen from the perl side.
+		 */
+
+		generic = (SOM_GENERIC*)SvIV(SvRV(self));
+
+		XPUSHs( newSVpvs("beat me whip me make me code badly") );
+		XPUSHs( newRV_inc(newSViv(generic->type)) );
+		XPUSHs( newRV_noinc(newSViv(generic->X)) );
+		XPUSHs( newRV_noinc(newSViv(generic->Y)) );
+		XPUSHs( newRV_noinc(newSViv(generic->Z)) );
+		XPUSHs( newRV_noinc(newSVnv(generic->R)) );
+		XPUSHs( newRV_noinc(newSVnv(generic->Sigma0)) );
+		XPUSHs( newRV_noinc(newSVnv(generic->L0)) );
+		XPUSHs( newRV_noinc(newSVnv(generic->LAMBDA)) );
+		XPUSHs( newRV_noinc(newSVnv(generic->T)) );
+		XPUSHs( newRV_noinc(generic->output_dim) );
+		XPUSHs( newRV_noinc((SV*)generic->labels) );
+
+		m = generic->map;
+		for ( x=generic->X-1 ; x>=0 ; x-- ) {
+			a = (&m->array)[x];
+			for ( y=generic->Y-1 ; y>=0 ; y-- ) {
+				v = (&a->vector)[y];
+				for ( z=generic->Z-1 ; z>=0 ; z-- ) {
+					XPUSHs(newRV_noinc(newSVnv(
+					(&v->element)[z])));
+				}
+			}
+		}
+	}
+	else {
+		croak("i wanna run with scissors!");
+	}
+	} /* cloning */
+	PUTBACK;
+}
+
+void _som_THAW(SV* self,SV* cloning,SV* serialized) {
+	IV		x,y,z,i;
+	SV		*rrr;
+	HV		*stash;
+	SOM_Map		*m;
+	SOM_Array	*a;
+	SOM_Vector	*v;
+	dXSARGS;
+
+	if ( SvTYPE(SvRV(self)) == SVt_PVHV ) {
+	}
+
+	else if ( SvTYPE(SvRV(self)) == SVt_PVMG ) {
+		SOM_GENERIC* som;
+		Newxz(som,1,SOM_GENERIC);
+
+		som->type = SvIV(SvRV(ST(3)));
+		som->X = SvIV(SvRV(ST(4)));
+		som->Y = SvIV(SvRV(ST(5)));
+		som->Z = SvIV(SvRV(ST(6)));
+		som->R = SvNV(SvRV(ST(7)));
+		som->Sigma0 = SvNV(SvRV(ST(8)));
+		som->L0 = SvNV(SvRV(ST(9)));
+		som->LAMBDA = SvNV(SvRV(ST(10)));
+		som->T = SvNV(SvRV(ST(11)));
+		som->output_dim = newSVsv(SvRV(ST(12)));
+		som->labels = (AV*)SvRV(ST(13));
+
+		som->map = _make_map( som );
+
+		i = 14;
+		m = som->map;
+		for ( x=som->X-1 ; x>=0 ; x-- ) {
+			a = (&m->array)[x];
+			for ( y=som->Y-1 ; y>=0 ; y-- ) {
+				v = (&a->vector)[y];
+				for ( z=som->Z-1 ; z>=0 ; z-- ) {
+					/*
+					(&v->element)[z] =
+						(double)SvNV(SvRV(ST(i++)));
+					*/
+					rrr = SvRV(ST(i++));
+					(&v->element)[z] = SvNV(rrr);
+				}
+			}
+		}
+
+		SvSetSV( SvRV(self), sv_2mortal(newSViv((IV)som)) );
+
+		stash = SvSTASH(SvRV(self));
+		som->ref = sv_bless(newRV_inc((SV*)self),stash);
+
+	}
+
+	else croak("you'll put an eye out!");
+
+	sp = mark;
+	PUTBACK;
+}
+
 
 
 /*
  * rect functions
  */
 
-AV* _rect_neighbors(SV* self,double sigma,double X,double Y,...) {
-	IV		x,y;
+AV* _rect_neighbors(SV* self,NV sigma,IV X0,IV Y0,...) {
+	IV		x,y,X,Y;
 	NV		distance;
+	AV		*tmp;
 	MAGIC		*mg;
 	SOM_GENERIC	*generic;
 
@@ -366,16 +490,16 @@ AV* _rect_neighbors(SV* self,double sigma,double X,double Y,...) {
 
 	generic =
 		(SOM_GENERIC*)SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)));
-	NV _X = generic->_X;
-	NV _Y = generic->_Y;
+	X = generic->X;
+	Y = generic->Y;
 
 	AV* neighbors = newAV();
 
-	for ( x=0 ; x<_X ; x++ ) {
-		for ( y=0 ; y<_Y ; y++ ) {
-			distance = sqrt((x-X)*(x-X)+(y-Y)*(y-Y));
+	for ( x=0 ; x<X ; x++ ) {
+		for ( y=0 ; y<Y ; y++ ) {
+			distance = sqrt((x-X0)*(x-X0)+(y-Y0)*(y-Y0));
 			if ( distance <= sigma ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp,newSViv(x));
 				av_push(tmp,newSViv(y));
 				av_push(tmp,newSVnv(distance));
@@ -388,11 +512,12 @@ AV* _rect_neighbors(SV* self,double sigma,double X,double Y,...) {
 
 void _rect_new(const char* class,...) {
 	SOM_GENERIC	*som;
-	SV		*tie,*rv;
+	SV		*tie,*rv,*key,*val,*od,*sclass;
 	HV		*options,*hash,*stash;
 	IV		i;
 	NV		sigma0,rate;
 	char		*begptr,*endptr,*xstart,*ystart,*yend;
+	STRLEN		len;
 	dXSARGS;
 
 	if ( items & 1 ^ 1 )
@@ -400,9 +525,8 @@ void _rect_new(const char* class,...) {
 
 	options = newHV();
 	for ( i=1 ; i<items ; i+=2 ) {
-		STRLEN len;
-		SV* key = ST(i);
-		SV* val = ST(i+1);
+		key = ST(i);
+		val = ST(i+1);
 		len = sv_len(key);
 		hv_store( options, SvPV_nolen(key), len, val, 0 );
 	}
@@ -414,7 +538,7 @@ void _rect_new(const char* class,...) {
 
 	Newxz(som, 1, SOM_GENERIC);
 
-	SV* od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
+	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
 	som->output_dim = od;
 
 	begptr = SvPV_force(od,SvLEN(od));
@@ -423,48 +547,48 @@ void _rect_new(const char* class,...) {
 		croak("brain damage!!!");
 
 	xstart = begptr;
-	if ( !isDIGIT((int)*xstart) )
+	if ( !isDIGIT((char)*xstart) )
 		croak("no x-dimension found");
-	som->_X = Atol(xstart);
+	som->X = Atol(xstart);
 
 	ystart = yend = endptr;
-	if ( !isDIGIT((int)*ystart) )
+	if ( !isDIGIT((char)*ystart) )
 		croak("no y-dimension found");
 	while (--ystart >= begptr)
-		if ( !isDIGIT((int)*ystart) )
+		if ( !isDIGIT((char)*ystart) )
 			break;
-	som->_Y = Atol(++ystart);
+	som->Y = Atol(++ystart);
 
-	som->_Z = SvIV(*hv_fetchs(options,"input_dim",FALSE));
+	som->Z = SvIV(*hv_fetchs(options,"input_dim",FALSE));
 
-	som->_R = som->_X > som->_Y
-		? som->_Y / 2.0
-		: som->_X / 2.0;
+	som->R = som->X > som->Y
+		? som->Y / 2.0
+		: som->X / 2.0;
 
 	if ( hv_exists( options, "sigma0", 6 ) ) {
 		sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
 		if ( sigma0 )
-			som->_Sigma0 = sigma0;
+			som->Sigma0 = sigma0;
 		else
-			som->_Sigma0 = som->_R;
+			som->Sigma0 = som->R;
 	}
 	else
-		som->_Sigma0 = som->_R;
+		som->Sigma0 = som->R;
 
 	if ( hv_exists( options, "learning_rate", 13 ) ) {
 		rate = SvNV(*hv_fetchs(options,"learning_rate",0));
 		if ( rate )
-			som->_L0 = rate;
+			som->L0 = rate;
 		else
-			som->_L0 = 0.1;
+			som->L0 = 0.1;
 	}
 	else
-		som->_L0 = 0.1;
+		som->L0 = 0.1;
 
 	som->map = _make_map(som);
 	som->labels = newAV();
 
-	SV *sclass = sv_2mortal(newSVpvf("%s",class));
+	sclass = sv_2mortal(newSVpvf("%s",class));
 	if ( !sv_cmp(sclass,newSVpvs("AI::NeuralNet::FastSOM::Rect")) )
 		som->type = SOMType_Rect;
 	/*
@@ -497,42 +621,60 @@ void _rect_new(const char* class,...) {
 	PUTBACK;
 }
 
-int _rect_refcount(SV* self) {
+IV _rect_refcount(SV* self) {
 	return SvREFCNT(SvRV(self));
 }
 
 SV* _rect_radius(SV* self) {
-	return newSVnv(SvNV(*hv_fetchs((HV*)SvRV(self),"_R",0)));
+	MAGIC		*mg;
+	SOM_GENERIC	*generic;
+
+	if ( !(mg = SvTIED_mg((SV*)SvRV(self), PERL_MAGIC_tied)) )
+		croak("self has no magic!\n");
+
+	generic=(SOM_GENERIC*)SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)));
+	return newSVnv(generic->R);
 }
 
 void _rect_DESTROY(SV* obj) {
+	IV		iv;
+	SV		*ref;
+	SOM_Map		*map;
+	SOM_GENERIC	*som;
+
 	if ( !SvROK(obj) )
 		return;
-	SV* ref = SvRV(obj);
+	ref = SvRV(obj);
 	if ( !SvIOK(ref) )
 		return;
-	IV iv = SvIV(ref);
-	SOM_GENERIC* som = (SOM_GENERIC*)iv;
+	iv = SvIV(ref);
+	som = (SOM_GENERIC*)iv;
 	if ( !som )
 		return;
-	SOM_Map* map = som->map;
-	//SvREFCNT_dec(SvRV(map->ref));
-	//Safefree( som );
+	map = som->map;
+	/* more to do here ? */
 }
 
 SV* _rect_FETCH(SV* self,SV* key) {
+	SOM_Rect	*rect;
+
+	if ( !sv_cmp( key, newSVpvs("map") ) ) {
+		rect = (SOM_Rect*)SvIV(SvRV(self));
+		SvREFCNT_inc(rect->map->ref);
+		return rect->map->ref;
+	}
 	if ( !sv_cmp( key, newSVpvs("_X") ) )
-		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->_X);
+		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->X);
 	if ( !sv_cmp( key, newSVpvs("_Y") ) )
-		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->_Y);
+		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->Y);
 	if ( !sv_cmp( key, newSVpvs("_Z") ) )
-		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->_Z);
+		return newSViv(((SOM_Rect*)SvIV(SvRV(self)))->Z);
 	if ( !sv_cmp( key, newSVpvs("_R") ) )
-		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->_R);
+		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->R);
 	if ( !sv_cmp( key, newSVpvs("_L0") ) )
-		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->_L0);
+		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->L0);
 	if ( !sv_cmp( key, newSVpvs("_Sigma0") ) )
-		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->_Sigma0);
+		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->Sigma0);
 	if ( !sv_cmp( key, newSVpvs("output_dim") ) )
 		return newSVsv(((SOM_Rect*)SvIV(SvRV(self)))->output_dim);
 	if ( !sv_cmp( key, newSVpvs("LAMBDA") ) )
@@ -541,42 +683,32 @@ SV* _rect_FETCH(SV* self,SV* key) {
 		return newSVnv(((SOM_Rect*)SvIV(SvRV(self)))->T);
 	if ( !sv_cmp( key, newSVpvs("labels") ) )
 		return newRV_inc((SV*)((SOM_Rect*)SvIV(SvRV(self)))->labels);
-	if ( !sv_cmp( key, newSVpvs("map") ) ) {
-		SOM_Rect* rect = (SOM_Rect*)SvIV(SvRV(self));
-		SvREFCNT_inc(rect->map->ref);
-		return rect->map->ref;
-	}
 	croak("%s not accessible for read", SvPV_nolen(key));
 }
 
 SV* _rect_STORE(SV* self,SV* key,SV* val) {
         if ( !sv_cmp( key, newSVpvs("_X") ) )
-                ((SOM_Rect*)SvIV(SvRV(self)))->_X = SvIV(val);
+                ((SOM_Rect*)SvIV(SvRV(self)))->X = SvIV(val);
         else if ( !sv_cmp( key, newSVpvs("_Y") ) )
-                ((SOM_Rect*)SvIV(SvRV(self)))->_Y = SvIV(val);
+                ((SOM_Rect*)SvIV(SvRV(self)))->Y = SvIV(val);
         else if ( !sv_cmp( key, newSVpvs("_Z") ) )
-                ((SOM_Rect*)SvIV(SvRV(self)))->_Z = SvIV(val);
+                ((SOM_Rect*)SvIV(SvRV(self)))->Z = SvIV(val);
         else if ( !sv_cmp( key, newSVpvs("_R") ) )
-                ((SOM_Rect*)SvIV(SvRV(self)))->_R = SvNV(val);
+                ((SOM_Rect*)SvIV(SvRV(self)))->R = SvNV(val);
 	else if ( !sv_cmp( key, newSVpvs("_L0") ) )
-		((SOM_Rect*)SvIV(SvRV(self)))->_L0 = SvNV(val);
+		((SOM_Rect*)SvIV(SvRV(self)))->L0 = SvNV(val);
         else if ( !sv_cmp( key, newSVpvs("_Sigma0") ) )
-                ((SOM_Rect*)SvIV(SvRV(self)))->_Sigma0 = SvNV(val);
+                ((SOM_Rect*)SvIV(SvRV(self)))->Sigma0 = SvNV(val);
         else if ( !sv_cmp( key, newSVpvs("output_dim") ) )
                 ((SOM_Rect*)SvIV(SvRV(self)))->output_dim = newSVsv(val);
 	else if ( !sv_cmp( key, newSVpvs("LAMBDA") ) )
 		((SOM_Rect*)SvIV(SvRV(self)))->LAMBDA = SvNV(val);
 	else if ( !sv_cmp( key, newSVpvs("T") ) )
 		((SOM_Rect*)SvIV(SvRV(self)))->T = SvNV(val);
-        else if ( !sv_cmp( key, newSVpvs("map") ) ) {
-                SOM_Rect* rect = (SOM_Rect*)SvIV(SvRV(self));
-                HV* stash = gv_stashpvs("AI::NeuralNet::FastSOM::MAP", 0);
-                SvREFCNT_inc(rect->map->ref);
-                return sv_bless(rect->map->ref,stash);
-        }
-	else {
+        else if ( !sv_cmp( key, newSVpvs("map") ) )
+		croak("cant assign to map");
+	else
 		croak("%s not accessible for write", SvPV_nolen(key));
-	}
 	return Nullsv;
 }
 
@@ -613,52 +745,62 @@ SV* _rect_NEXTKEY(SV* self,SV* prev) {
  */
 
 /* http://www.ai-junkie.com/ann/som/som3.html */
-AV* _torus_neighbors(SV* self,NV sigma,NV X,NV Y) {
-	IV x;
-	IV y;
-	NV distance2;
-	NV sigma2 = (NV)sigma * (NV)sigma;
-	NV _X = SvNV(*hv_fetchs((HV*)SvRV(self), "_X", FALSE));
-	NV _Y = SvNV(*hv_fetchs((HV*)SvRV(self), "_Y", FALSE));
-	AV* neighbors = newAV();
+AV* _torus_neighbors(SV* self,NV sigma,IV X0,IV Y0) {
+	IV		x,y,X,Y;
+	NV		distance2,sigma2;
+	AV		*neighbors,*tmp;
+	MAGIC		*mg;
+	SOM_GENERIC	*som;
 
-	for ( x=0 ; x<_X ; x++ ) {
-		for ( y=0 ; y<_Y ; y++ ) {
-			distance2 = (x-X)*(x-X) + (y-Y)*(y-Y);
+	sigma2 = sigma * sigma;
+
+	if ( !(mg = SvTIED_mg((SV*)SvRV(self), PERL_MAGIC_tied)) )
+		croak("self has no magic!\n");
+
+	som = (SOM_GENERIC*)SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)));
+
+	X = som->X;
+	Y = som->Y;
+
+	neighbors = newAV();
+
+	for ( x=0 ; x<X ; x++ ) {
+		for ( y=0 ; y<Y ; y++ ) {
+			distance2 = (x-X0)*(x-X0) + (y-Y0)*(y-Y0);
 			if ( distance2 <= sigma2 ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp, newSVnv(x));
 				av_push(tmp, newSVnv(y));
 				av_push(tmp, newSVnv(sqrt(distance2)));
 				av_push(neighbors, newRV_noinc((SV*)tmp));
 			}
-			distance2 = (x-_X-X)*(x-_X-X) + (y-Y)*(y-Y);
+			distance2 = (x-X-X0)*(x-X-X0) + (y-Y0)*(y-Y0);
 			if ( distance2 <= sigma2 ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp, newSVnv(x));
 				av_push(tmp, newSVnv(y));
 				av_push(tmp, newSVnv(sqrt(distance2)));
 				av_push(neighbors, newRV_noinc((SV*)tmp));
 			}
-			distance2 = (x+_X-X)*(x+_X-X) + (y-Y)*(y-Y);
+			distance2 = (x+X-X0)*(x+X-X0) + (y-Y0)*(y-Y0);
 			if ( distance2 <= sigma2 ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp, newSVnv(x));
 				av_push(tmp, newSVnv(y));
 				av_push(tmp, newSVnv(sqrt(distance2)));
 				av_push(neighbors, newRV_noinc((SV*)tmp));
 			}
-			distance2 = (x-X)*(x-X) + (y-_Y-Y)*(y-_Y-Y);
+			distance2 = (x-X0)*(x-X0) + (y-Y-Y0)*(y-Y-Y0);
 			if ( distance2 <= sigma2 ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp, newSVnv(x));
 				av_push(tmp, newSVnv(y));
 				av_push(tmp, newSVnv(sqrt(distance2)));
 				av_push(neighbors, newRV_noinc((SV*)tmp));
 			}
-			distance2 = (x-X)*(x-X) + (y+_Y-Y)*(y+_Y-Y);
+			distance2 = (x-X0)*(x-X0) + (y+Y-Y0)*(y+Y-Y0);
 			if ( distance2 <= sigma2 ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp, newSVnv(x));
 				av_push(tmp, newSVnv(y));
 				av_push(tmp, newSVnv(sqrt(distance2)));
@@ -677,20 +819,21 @@ AV* _torus_neighbors(SV* self,NV sigma,NV X,NV Y) {
 
 void _hexa_new(const char* class) {
 	SOM_Hexa	*hexa;
-	SV		*obj_ref;
-	SV		*obj;
+	SV		*obj,*obj_ref,*key,*val,*od,*tie,*rv;
 	HV		*options;
 	IV		i;
+	NV		sigma0,rate;
+	HV		*hash,*stash;
+	STRLEN		len;
 	dXSARGS;
 
 	if ( items & 1 ^ 1 )
-		croak( "See usage for hexa\n" );
+		croak( "Weird number of arguments\n" );
 
 	options = newHV();
 	for ( i=1 ; i<items ; i+=2 ) {
-		STRLEN len;
-		SV *key = ST(i);
-		SV *val = ST(i+1);
+		key = ST(i);
+		val = ST(i+1);
 		len = sv_len(key);
 		hv_store( options, SvPV_nolen(key), len, val, 0 );
 	}
@@ -702,44 +845,46 @@ void _hexa_new(const char* class) {
 
 	Newxz( hexa, 1, SOM_Hexa );
 
-	hexa->_X=SvNV(*hv_fetchs(options,"output_dim",FALSE));
-	hexa->_Z=SvNV(*hv_fetchs(options,"input_dim",FALSE));
+	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
+	hexa->output_dim = od;
 
-	hexa->_Y = hexa->_X;
-	hexa->_R = hexa->_X / 2.0;
+	hexa->X=SvIV(*hv_fetchs(options,"output_dim",FALSE));
+	hexa->Z=SvIV(*hv_fetchs(options,"input_dim",FALSE));
+
+	hexa->Y = hexa->X;
+	hexa->R = hexa->X / 2.0;
 
 	if ( hv_exists( options, "sigma0", 6 ) ) {
-                NV sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
+		IV sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
                 if ( sigma0 )
-                        hexa->_Sigma0 = sigma0;
+                        hexa->Sigma0 = sigma0;
                 else
-                        hexa->_Sigma0 = hexa->_R;
+                        hexa->Sigma0 = hexa->R;
         }
         else
-                hexa->_Sigma0 = hexa->_R;
+                hexa->Sigma0 = hexa->R;
 
 	if ( hv_exists( options, "learning_rate", 13 ) ) {
-                NV rate = SvNV(*hv_fetchs(options,"learning_rate",0));
+                IV rate = SvNV(*hv_fetchs(options,"learning_rate",0));
                 if ( rate )
-                        hexa->_L0 = rate;
+                        hexa->L0 = rate;
                 else
-                        hexa->_L0 = 0.1;
+                        hexa->L0 = 0.1;
         }
         else
-                hexa->_L0 = 0.1;
+                hexa->L0 = 0.1;
 
 	hexa->map = _make_map( hexa );
 	hexa->labels = newAV();
 
-	//hexa->type = newSVpvf("%s",class);
 	hexa->type = SOMType_Hexa;
 
-	HV* hash = (HV*)sv_2mortal((SV*)newHV());
-	SV* tie = newRV_noinc(newSViv((IV)hexa));
-	HV* stash = gv_stashpv("AI::NeuralNet::FastSOM::Hexa", GV_ADD);
+	hash = (HV*)sv_2mortal((SV*)newHV());
+	tie = newRV_noinc(newSViv((IV)hexa));
+	stash = gv_stashpv(class, GV_ADD);
 	sv_bless(tie, stash);
 	hv_magic(hash, (GV*)tie, PERL_MAGIC_tied);
-	SV* rv = sv_bless(newRV_noinc((SV*)hash),stash);
+	rv = sv_bless(newRV_noinc((SV*)hash),stash);
 
 	hexa->ref = rv;
 
@@ -749,9 +894,7 @@ void _hexa_new(const char* class) {
 }
 
 NV _hexa_distance(NV x1,NV y1,NV x2,NV y2) {
-	NV tmp;
-	NV dx;
-	NV dy;
+	NV	tmp,dx,dy;
 
 	if ( x1+y1 > x2+y2 ) {
 		tmp=x1; x1=x2; x2=tmp;
@@ -767,9 +910,10 @@ NV _hexa_distance(NV x1,NV y1,NV x2,NV y2) {
 		return dx<dy ? dy : dx;
 }
 
-AV* _hexa_neighbors(SV* self,double sigma,double X,double Y) {
-	IV		x,y;
+AV* _hexa_neighbors(SV* self,NV sigma,IV X0,IV Y0) {
+	IV		x,y,X,Y;
 	NV		distance;
+	AV		*tmp,*neighbors;
 	MAGIC		*mg;
 	SOM_GENERIC	*generic;
 
@@ -778,16 +922,16 @@ AV* _hexa_neighbors(SV* self,double sigma,double X,double Y) {
 
 	generic =
 		(SOM_GENERIC*)SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)));
-	NV _X = generic->_X;
-	NV _Y = generic->_Y;
+	X = generic->X;
+	Y = generic->Y;
 
-	AV* neighbors = newAV();
+	neighbors = newAV();
 
-	for ( x=0 ; x<_X ; x++ ) {
-		for ( y=0 ; y<_Y ; y++ ) {
-			distance = _hexa_distance(X,Y,x,y);
+	for ( x=0 ; x<X ; x++ ) {
+		for ( y=0 ; y<Y ; y++ ) {
+			distance = _hexa_distance(X0,Y0,x,y);
 			if ( distance <= sigma ) {
-				AV* tmp = newAV();
+				tmp = newAV();
 				av_push(tmp,newSViv(x));
 				av_push(tmp,newSViv(y));
 				av_push(tmp,newSVnv(distance));
@@ -799,41 +943,43 @@ AV* _hexa_neighbors(SV* self,double sigma,double X,double Y) {
 }
 
 SV* _hexa_FETCH(SV* self,SV* key) {
+	SOM_Hexa	*hexa;
+
+	if ( !sv_cmp( key, newSVpvs("map") ) ) {
+		hexa = (SOM_Hexa*)SvIV(SvRV(self));
+		SvREFCNT_inc(hexa->map->ref);
+		return hexa->map->ref;
+	}
 	if ( !sv_cmp( key, newSVpvs("_X") ) )
-		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->_X);
+		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->X);
 	if ( !sv_cmp( key, newSVpvs("_R") ) )
-		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->_R);
+		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->R);
 	if ( !sv_cmp( key, newSVpvs("_Z") ) )
-		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->_Z);
+		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->Z);
 	if ( !sv_cmp( key, newSVpvs("_L0") ) )
-		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->_L0);
+		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->L0);
 	if ( !sv_cmp( key, newSVpvs("_Sigma0") ) )
-		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->_Sigma0);
+		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->Sigma0);
 	if ( !sv_cmp( key, newSVpvs("LAMBDA") ) )
 		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->LAMBDA);
 	if ( !sv_cmp( key, newSVpvs("T") ) )
 		return newSVnv(((SOM_Hexa*)SvIV(SvRV(self)))->T);
 	if ( !sv_cmp( key, newSVpvs("labels") ) )
 		return newRV_inc((SV*)((SOM_Hexa*)SvIV(SvRV(self)))->labels);
-	if ( !sv_cmp( key, newSVpvs("map") ) ) {
-		SOM_Hexa *hexa = (SOM_Hexa*)SvIV(SvRV(self));
-		SvREFCNT_inc(hexa->map->ref);
-		return hexa->map->ref;
-	}
 	croak("%s not accessible for read", SvPV_nolen(key));
 }
 
 void _hexa_STORE(SV* self,SV* key,SV* val) {
         if ( !sv_cmp( key, newSVpvs("_X") ) )
-                ((SOM_Hexa*)SvIV(SvRV(self)))->_X = SvIV(val);
+                ((SOM_Hexa*)SvIV(SvRV(self)))->X = SvIV(val);
         else if ( !sv_cmp( key, newSVpvs("_Z") ) )
-                ((SOM_Hexa*)SvIV(SvRV(self)))->_Z = SvIV(val);
+                ((SOM_Hexa*)SvIV(SvRV(self)))->Z = SvIV(val);
         else if ( !sv_cmp( key, newSVpvs("_R") ) )
-                ((SOM_Hexa*)SvIV(SvRV(self)))->_R = SvNV(val);
+                ((SOM_Hexa*)SvIV(SvRV(self)))->R = SvNV(val);
         else if ( !sv_cmp( key, newSVpvs("_L0") ) )
-                ((SOM_Hexa*)SvIV(SvRV(self)))->_L0 = SvNV(val);
+                ((SOM_Hexa*)SvIV(SvRV(self)))->L0 = SvNV(val);
         else if ( !sv_cmp( key, newSVpvs("_Sigma0") ) )
-                ((SOM_Hexa*)SvIV(SvRV(self)))->_Sigma0 = SvNV(val);
+                ((SOM_Hexa*)SvIV(SvRV(self)))->Sigma0 = SvNV(val);
         else if ( !sv_cmp( key, newSVpvs("output_dim") ) )
                 ((SOM_Hexa*)SvIV(SvRV(self)))->output_dim = newSVsv(val);
 	else if ( !sv_cmp( key, newSVpvs("LAMBDA") ) )
@@ -850,38 +996,46 @@ void _hexa_STORE(SV* self,SV* key,SV* val) {
  * map functions
  */
 
-int _map_refcount(SV* self) {
+IV _map_refcount(SV* self) {
 	return SvREFCNT(SvRV(self));
 }
 
 SV* _map_FETCH(SV* self,I32 x) {
-	SOM_Map* map = (SOM_Map*)SvIV(SvRV(self));
-	I32 gimme = GIMME_V;
-	//x %= map->_X;
-	SOM_Array* array = (&map->array)[x];
+	SOM_Map		*map;
+	SOM_Array	*array;
+	
+	map = (SOM_Map*)SvIV(SvRV(self));
+	array = (&map->array)[x];
 	SvREFCNT_inc(array->ref);
 	return array->ref;
 }
 
 IV _map_FETCHSIZE(SV* self) {
-	SOM_Map *map = (SOM_Map*)SvIV(SvRV(self));
-	return map->_X;
+	SOM_Map	*map;
+
+	map = (SOM_Map*)SvIV(SvRV(self));
+	return map->X;
 }
 
 void _map_DESTROY(SV* obj) {
+	IV		i,iv;
+	SV		*ref;
+	SOM_Map		*map;
+	SOM_Array	*array;
+
 	if ( !SvROK(obj) )
 		return;
-	SV* ref = SvRV(obj);
+	ref = SvRV(obj);
 	if ( !SvIOK(ref) )
 		return;
-	IV iv = SvIV(ref);
-	SOM_Map* map = (SOM_Map*)iv;
+	iv = SvIV(ref);
+	map = (SOM_Map*)iv;
 	if ( !map )
 		return;
-	int i = map->_X;
+	i = map->X;
 	while ( --i >= 0 ) {
-		SOM_Array* array = (&map->array)[i];
-		//SvREFCNT_dec(SvRV(array->ref));
+		array = (&map->array)[i];
+		/* need more done here ? */
 	}
 	Safefree( map );
 }
@@ -892,67 +1046,83 @@ void _map_DESTROY(SV* obj) {
  * array functions
  */
 
-int _array_refcount(SV* self) {
+IV _array_refcount(SV* self) {
 	return SvREFCNT(SvRV(self));
 }
 
 void _array_STORE(SV* self,IV y,SV* aref) {
+	I32		len;
+	NV		tmp;
+	AV		*src;
+	SV		**ptr;
+	SOM_Array	*array;
+	SOM_Vector	*dst;
+
 	if ( SvTYPE( SvRV(aref) ) != SVt_PVAV )
 		croak("value to store is not a reference to an array\n");
-	AV* src = (AV*)SvRV( aref );
+	src = (AV*)SvRV( aref );
 
-	SOM_Array* array = (SOM_Array*)SvIV(SvRV(self));
-	SOM_Vector* dst = (SOM_Vector*)(&array->vector)[y];
+	array = (SOM_Array*)SvIV(SvRV(self));
+	dst = (SOM_Vector*)(&array->vector)[y];
 
 	if ( y < 0 )
 		croak("storing y-index < 0 not supported\n");
-	if ( y >= array->_Y )
+	if ( y >= array->Y )
 		croak("storing y-index > y-dimension of SOM\n");
 
-	I32 len = av_len( src );
+	len = av_len( src );
 	if ( len < 0 )
 		croak("cant store empty vector\n");
-	if ( len+1 > array->_Z )
+	if ( len+1 > array->Z )
 		croak("vector too long\n");
-	if ( len+1 < array->_Z )
+	if ( len+1 < array->Z )
 		croak("vector too short\n");
 
 	for ( ; len >= 0 ; len-- ) {
-		SV** ptr = av_fetch( src, len, 0 );
+		ptr = av_fetch( src, len, 0 );
 		if ( ptr == NULL )
 			croak("NULL ptr!\n");
-		double tmp = SvNV(*ptr);
+		tmp = SvNV(*ptr);
 		(&dst->element)[len] = tmp;
 	}
 }
 
 SV* _array_FETCH(SV* self,I32 y) {
-	SOM_Array* array = (SOM_Array*)SvIV(SvRV(self));
-	//y %= array->_Y;
-	SOM_Vector* vector = (&array->vector)[y];
+	SOM_Array	*array;
+	SOM_Vector	*vector;
+
+	array = (SOM_Array*)SvIV(SvRV(self));
+	vector = (&array->vector)[y];
 	SvREFCNT_inc(vector->ref);
 	return vector->ref;
 }
 
 IV _array_FETCHSIZE(SV* self) {
-	SOM_Array* array = (SOM_Array*)SvIV(SvRV(self));
-	return array->_Y;
+	SOM_Array	*array;
+
+	array = (SOM_Array*)SvIV(SvRV(self));
+	return array->Y;
 }
 
 void _array_DESTROY(SV* obj) {
+	IV		i,iv;
+	SV		*ref;
+	SOM_Array	*array;
+	SOM_Vector	*vector;
+
 	if ( !SvROK(obj) )
 		return;
-	SV* ref = SvRV(obj);
+	ref = SvRV(obj);
 	if ( !SvIOK(ref) )
 		return;
-	IV iv = SvIV(ref);
-	SOM_Array* array = (SOM_Array*)iv;
+	iv = SvIV(ref);
+	array = (SOM_Array*)iv;
 	if ( !array )
 		return;
-	int i = array->_Y;
+	i = array->Y;
 	while ( --i >= 0 ) {
-		SOM_Vector* vector = (&array->vector)[i];
-		//SvREFCNT_dec(SvRV(vector->ref));
+		vector = (&array->vector)[i];
+		/* need more done here ? */
 	}
 	Safefree( array );
 }
@@ -963,45 +1133,49 @@ void _array_DESTROY(SV* obj) {
  * vector functions
  */
 
-int _vector_refcount(SV* self) {
+IV _vector_refcount(SV* self) {
 	return SvREFCNT(SvRV(self));
 }
 
 void _vector_STORE(SV* self, I32 z, double val) {
-	SOM_Vector *vector = (SOM_Vector*)SvIV(SvRV(self));
+	SOM_Vector	*vector;
+
+	vector = (SOM_Vector*)SvIV(SvRV(self));
 	if ( z < 0 )
 		croak("negative z-index not supported\n");
-	if ( z >= vector->_Z )
+	if ( z >= vector->Z )
 		croak("z-index larger than vector dimension\n");
 	(&vector->element)[z] = val;
 }
 
 SV* _vector_FETCH(SV* self,I32 z) {
-	SOM_Vector* vector = (SOM_Vector*)SvIV(SvRV(self));
-	//z %= vector->_Z;
+	SOM_Vector	*vector;
+
+	vector = (SOM_Vector*)SvIV(SvRV(self));
 	return newSVnv((&vector->element)[z]);
 }
 
 IV _vector_FETCHSIZE(SV* self) {
-	SOM_Vector *vector = (SOM_Vector*)SvIV(SvRV(self));
-	return vector->_Z;
+	SOM_Vector	*vector;
+
+	vector = (SOM_Vector*)SvIV(SvRV(self));
+	return vector->Z;
 }
 
 void _vector_DESTROY(SV* obj) {
+	IV		iv;
+	SV		*ref;
+	SOM_Vector	*vector;
+
 	if ( !SvROK(obj) )
 		return;
-	SV* ref = SvRV(obj);
+	ref = SvRV(obj);
 	if ( !SvIOK(ref) )
 		return;
-	IV iv = SvIV(ref);
-	SOM_Vector* vector = (SOM_Vector*)iv;
+	iv = SvIV(ref);
+	vector = (SOM_Vector*)iv;
 	if ( !vector )
 		return;
-	/*
-	 * no reference count trickery to do here. our array items are
-	 * simply doubles, so they get cleaned up by just freeing the
-	 * structure.
-	 */
 	Safefree( vector );
 }
 
@@ -1130,6 +1304,37 @@ _adjust (self, l, sigma, unit, v)
 	}
 	return;
 
+void
+STORABLE_freeze (self, cloning)
+	SV *	self
+	SV *	cloning
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	_som_FREEZE(self,cloning);
+	if (PL_markstack_ptr != temp) {
+		PL_markstack_ptr = temp;
+		XSRETURN_EMPTY;
+	}
+	return;
+
+void
+STORABLE_thaw (self, cloning, serialized, ...)
+	SV *	self
+	SV *	cloning
+	SV *	serialized
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	_som_THAW(self,cloning,serialized);
+	if (PL_markstack_ptr != temp) {
+		PL_markstack_ptr = temp;
+		XSRETURN_UNDEF;
+	}
+	return;
+
 
 
 MODULE = AI::NeuralNet::FastSOM		PACKAGE = AI::NeuralNet::FastSOM::Rect	
@@ -1181,7 +1386,7 @@ new (class, ...)
         }
 	return;
 
-int
+IV
 refcount (self)
 	SV *	self
 	CODE:
@@ -1366,7 +1571,7 @@ MODULE = AI::NeuralNet::FastSOM 	PACKAGE = AI::NeuralNet::FastSOM::MAP
 PROTOTYPES: DISABLE
 
 
-int
+IV
 refcount (self)
 	SV *	self
 	CODE:
@@ -1410,7 +1615,7 @@ MODULE = AI::NeuralNet::FastSOM		PACKAGE = AI::NeuralNet::FastSOM::ARRAY
 PROTOTYPES: DISABLE
 
 
-int
+IV
 refcount (self)
 	SV *	self
 	CODE:
@@ -1470,7 +1675,7 @@ MODULE = AI::NeuralNet::FastSOM	PACKAGE = AI::NeuralNet::FastSOM::VECTOR
 PROTOTYPES: DISABLE
 
 
-int
+IV
 refcount (self)
 	SV *	self
 	CODE:

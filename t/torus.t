@@ -72,9 +72,6 @@ sub _find {
 #    print $nn->as_string;
 }
 
-use File::Temp 'tempfile';
-use Storable qw/store retrieve/;
-my ($file,$bmu_x,$bmu_y);
 {
         my $nn = AI::NeuralNet::FastSOM::Torus->new(
                 output_dim => '5x6',
@@ -85,17 +82,31 @@ my ($file,$bmu_x,$bmu_y);
         my @vs = ([ 3, 2, 4 ], [ -1, -1, -1 ], [ 0, 4, -3]);
         $nn->train(400, @vs);
 
-        ($bmu_x,$bmu_y) = $nn->bmu([3,2,4]);
-
-        $file = tempfile();
-        store( $nn, $file );
+	my $k = keys %$nn;
+	is( $k, 10, 'scalar torus key count' );
+	my @k = keys %$nn;
+	is( @k, 10, 'array torus key count' );
 }
+
+use Storable qw/store/;
+my ($bmu_x,$bmu_y);
 {
-        my $nn = retrieve( $file );
-        my ($x,$y) = $nn->bmu([3,2,4]);
-        is( $x, $bmu_x, 'stored x' );
-        is( $y, $bmu_y, 'stored y' );
-	unlink $file;
+	my $nn = AI::NeuralNet::FastSOM::Torus->new(
+		output_dim => '5x6',
+		input_dim  => 3
+	);
+	$nn->initialize;
+
+	my @vs = ([ 3, 2, 4 ], [ -1, -1, -1 ], [ 0, 4, -3]);
+	$nn->train(400, @vs);
+
+	($bmu_x,$bmu_y) = $nn->bmu([3,2,4]);
+
+	ok( open(FILE, '> t/save_torus_bmu.bin'), 'torus save' );
+	print FILE "$bmu_x\n$bmu_y\n";
+	close FILE;
+
+	store( $nn, 't/save_torus.bin' );
 }
 
 __END__

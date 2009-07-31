@@ -43,66 +43,66 @@
  */
 
 /*
- * SOM_Vector : holds _Z doubles
+ * SOM_Vector : holds Z doubles
  *
  * should be allocated:
- *	sizeof(SOM_Vector) + sizeof(double)*(_Z-1)
+ *	sizeof(SOM_Vector) + sizeof(double)*(Z-1)
  *
  * this is enough space to use the 'element' member as the base of an array
- * of _Z doubles.
+ * of Z doubles.
  *
  * the 'ref' element is a pointer to a perl RV referencing a tied array.
  * a copy of 'ref' will be returned to the perl side on request, and the
  * tied array interface can be use to access the members of this struct.
  *
- * '_Z' is of course the number of doubles in the 'element' array.
+ * 'Z' is of course the number of doubles in the 'element' array.
  */
 typedef struct {
 	SV *ref;
-	long _Z;
-	double element;
+	IV Z;
+	NV element;
 } SOM_Vector;
 
 /*
- * SOM_Array : holds _Y ptrs to SOM_Vector thingys
+ * SOM_Array : holds Y ptrs to SOM_Vector thingys
  *
  * should be allocated:
- *	sizeof(SOM_Array) + sizeof(SOM_Vector*)*(_Y-1)
+ *	sizeof(SOM_Array) + sizeof(SOM_Vector*)*(Y-1)
  *
  * 'ref' and 'vector' elements similar in functionality to the 'ref' and
  * 'element' members, respectively, of the SOM_Vector struct.
  *
- * '_Y' is the number of SOM_Vector pointers in the 'vector' array.
+ * 'Y' is the number of SOM_Vector pointers in the 'vector' array.
  *
- * '_Z' is provided here only for propogation down the line in creating
+ * 'Z' is provided here only for propogation down the line in creating
  * the SOM_Vectors.
  */
 typedef struct {
 	SV *ref;
-	long _Y;
-	long _Z;
+	IV Y;
+	IV Z;
 	SOM_Vector *vector;
 } SOM_Array;
 
 /*
- * SOM_Map : holds _X ptrs to SOM_Array thingys
+ * SOM_Map : holds X ptrs to SOM_Array thingys
  *
  * should be allocated:
- *	sizeof(SOM_Map) + sizeof(SOM_Array*)*(_X-1)
+ *	sizeof(SOM_Map) + sizeof(SOM_Array*)*(X-1)
  *
  * 'ref' and 'array' are similar in functionality to the 'ref' and 'element'
  * members, respectively, of the SOM_Vector struct.
  *
- * '_X' is the number of SOM_Array pointers in the 'array' array.
+ * 'X' is the number of SOM_Array pointers in the 'array' array.
  *
- * '_Y' and '_Z' are provided here only for propagation down the line in
+ * 'Y' and 'Z' are provided here only for propagation down the line in
  * creation of SOM_Array and SOM_Vector structs.
  */
 typedef struct {
 	SV *ref;
-	long _X;
-	long _Y;
-	long _Z;
+	IV X;
+	IV Y;
+	IV Z;
 	SOM_Array *array;
 } SOM_Map;
 
@@ -114,7 +114,7 @@ typedef struct {
  *
  * this struct is the main object.
  *
- * '_X', '_Y', and '_Z' are held here for progagation down to the structs
+ * 'X', 'Y', and 'Z' are held here for progagation down to the structs
  * that make up our grid map.
  *
  * '_R'      = initial SOM radius
@@ -126,14 +126,14 @@ typedef struct {
  */
 typedef struct {
 	SV *ref;
-	long _X;
-	long _Y;
-	long _Z;
-	double _R;
-	double _Sigma0;
-	double _L0;
-	double LAMBDA;
-	double T;
+	IV X;
+	IV Y;
+	IV Z;
+	NV R;
+	NV Sigma0;
+	NV L0;
+	NV LAMBDA;
+	NV T;
 	int type;
 	SV *output_dim;
 	AV *labels;
@@ -151,6 +151,4 @@ enum SOMType {
 };
 
 typedef AV AV_SPECIAL;
-
-#include "FastSOM-decl.h"
 

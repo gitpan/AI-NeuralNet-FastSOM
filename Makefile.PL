@@ -1,4 +1,4 @@
-use 5.010000;
+use 5.008000;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -8,6 +8,9 @@ WriteMakefile(
 	AUTHOR		=> 'Rick Myers <jrm@cpan.org>',
 	test => {
 		TESTS => 't/*.t t/orig/*.t',
+	},
+	clean => {
+		FILES => 't/*.bin',
 	},
 );
 
