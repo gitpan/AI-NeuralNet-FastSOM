@@ -1,5 +1,15 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.09  Wed Aug  5 20:26:17 2009
+	- removed several temporary AVs in train(), fixing massive
+	  memory leak
+	- removed another temp AV in _bmu_guts(), fixing another
+	  memory leak
+	- added pointer <-> IV conversions, hopefully fixing tons of
+	  warnings on platforms where ivsize != ptrsize
+	- added macros to speed up pointer conversions
+	- consolidated bmu code in ::FastSOM
+
 0.08  Fri Jul 31 16:17:32 2009
 	- removed leading underscore from struct member names
 	- removed all // comments, just in case...

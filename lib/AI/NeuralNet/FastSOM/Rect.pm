@@ -6,7 +6,7 @@ use warnings;
 use AI::NeuralNet::FastSOM;
 our @ISA = qw/AI::NeuralNet::FastSOM/;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub _old_radius { shift->{_R} }
 

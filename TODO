@@ -1,3 +1,7 @@
+- redo proto.h.. again!
+
+- "cannot take sizeof void"
+
 - test older perls. at least drop version requirement back as far as will
   work with what we have now.
 

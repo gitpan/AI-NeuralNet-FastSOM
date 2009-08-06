@@ -6,7 +6,7 @@ use warnings;
 use AI::NeuralNet::FastSOM::Rect;
 our @ISA = qw/AI::NeuralNet::FastSOM::Rect/;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 1;
 

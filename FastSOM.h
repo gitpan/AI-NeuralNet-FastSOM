@@ -3,18 +3,18 @@
  * Example 2x3x2 structure
  * =======================
  *
- * Rect---+---Map---+---Array---+---Vector---+---double
- *                  |           |             \--double
- *                  |           +---Vector---+---double
- *                  |           |             \--double
- *                  |            \--Vector---+---double
- *                  |                         \--double
- *                   \--Array---+---Vector---+---double
- *                              |             \--double
- *                              +---Vector---+---double
- *                              |             \--double
- *                               \--Vector---+---double
- *                                            \--double
+ * Rect---+---Map---+---Array---+---Vector---+---NV
+ *                  |           |             \--NV
+ *                  |           +---Vector---+---NV
+ *                  |           |             \--NV
+ *                  |            \--Vector---+---NV
+ *                  |                         \--NV
+ *                   \--Array---+---Vector---+---NV
+ *                              |             \--NV
+ *                              +---Vector---+---NV
+ *                              |             \--NV
+ *                               \--Vector---+---NV
+ *                                            \--NV
  * 
  * References
  * ==========
@@ -43,19 +43,19 @@
  */
 
 /*
- * SOM_Vector : holds Z doubles
+ * SOM_Vector : holds Z NVs
  *
  * should be allocated:
- *	sizeof(SOM_Vector) + sizeof(double)*(Z-1)
+ *	sizeof(SOM_Vector) + sizeof(NV)*(Z-1)
  *
  * this is enough space to use the 'element' member as the base of an array
- * of Z doubles.
+ * of Z NVs.
  *
  * the 'ref' element is a pointer to a perl RV referencing a tied array.
  * a copy of 'ref' will be returned to the perl side on request, and the
  * tied array interface can be use to access the members of this struct.
  *
- * 'Z' is of course the number of doubles in the 'element' array.
+ * 'Z' is of course the number of NVs in the 'element' array.
  */
 typedef struct {
 	SV *ref;
@@ -151,4 +151,13 @@ enum SOMType {
 };
 
 typedef AV AV_SPECIAL;
+
+#define selfmg2iv(self,mg) SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)))
+#define self2iv(self) SvIV(SvRV(self))
+
+#define selfmagic(self) SvTIED_mg((SV*)SvRV(self), PERL_MAGIC_tied)
+
+#define self2somptr(self,mg) INT2PTR(SOM_GENERIC*,selfmg2iv(self,mg))
+
+#define tied2ptr(self) (INT2PTR(SOM_GENERIC*,SvIV(SvRV(self))))
 
