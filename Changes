@@ -1,5 +1,12 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.10  Fri Aug  7 09:11:39 2009
+	- no longer relying on sizeof(void)
+	- removed a bit of old test code
+	- one more PTR2INT conversion
+	- experimentally dropped perl require to 5.6.2
+	- hopefully fixed a few casting problems for some platforms
+
 0.09  Wed Aug  5 20:26:17 2009
 	- removed several temporary AVs in train(), fixing massive
 	  memory leak

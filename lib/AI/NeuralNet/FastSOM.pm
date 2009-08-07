@@ -4,37 +4,7 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '0.09';
-
-=pod
-
-sub STORABLE_thaw {
-	my ($self,$string,$more) = @_;
-warn("got: @_\n");
-if ( ref($self) eq 'AI::NeuralNet::FastSOM::Rect' ) {
-	die "got a rect!!!!!!!!!!";
-}
-if ( ref($self) eq 'HASH' ) {
-	die "got a HASH!!!!!!!!!!";
-}
-if ( ref($self) eq 'SCALAR' ) {
-	die "got a SCALAR!!!!!!!!";
-}
-}
-
-=cut
-
-=pod
-
-sub STORABLE_freeze {
-	my ($self,$cloning) = @_;
-	warn "store self: $self\n";
-	warn "store cloning: $cloning\n";
-	my $s = 'yippee cyaaaa';
-	return $s;
-}
-
-=cut
+our $VERSION = '0.10';
 
 sub label {
 	my ($self, $x, $y, $l) = @_;

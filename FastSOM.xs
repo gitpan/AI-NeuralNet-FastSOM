@@ -6,23 +6,11 @@
 #include "FastSOM.h"
 #include "proto.h"
 
-U32 mysize() {
-	U32 size = 0;
-	char buf[30];
-	snprintf(buf,30,"/proc/self/statm");
-	FILE* f = fopen(buf,"r");
-	if (f) fscanf(f,"%u",&size);
-	fclose(f);
-	return size;
-}
-
-
 NV _vector_distance(AV* V1, AV* V2) {
 	NV	diff,sum;
 	I32	w_ptr;
 
 	sum = 0;
-
 	for ( w_ptr=av_len(V2) ; w_ptr>=0 ; w_ptr-- ) {
 		diff = SvNV(*av_fetch(V1, w_ptr, FALSE))
 			- SvNV(*av_fetch(V2, w_ptr, FALSE));
@@ -193,7 +181,7 @@ SV* output_dim(SV* self) {
  */
 
 SOM_Vector* _make_vector(SOM_Array* array) {
-	IV		z;
+	IV		z,len;
 	AV		*thingy;
 	SV		*tie;
 	HV		*stash;
@@ -201,7 +189,9 @@ SOM_Vector* _make_vector(SOM_Array* array) {
 
         z = array->Z;
 
-        Newxz( vector, sizeof(SOM_Vector) + z * sizeof(NV), void );
+	len = sizeof(SOM_Vector)+z*sizeof(NV);
+        Newxc(vector, len, char, SOM_Vector);
+	Zero(vector, len, char);
 
         vector->Z = z;
 
@@ -209,7 +199,7 @@ SOM_Vector* _make_vector(SOM_Array* array) {
         tie = newRV_noinc(newSViv(PTR2IV(vector)));
         stash = gv_stashpv("AI::NeuralNet::FastSOM::VECTOR", GV_ADD);
         sv_bless(tie, stash);
-        hv_magic(thingy, tie, PERL_MAGIC_tied);
+        hv_magic((HV*)thingy, (GV*)tie, PERL_MAGIC_tied);
 	vector->ref = newRV_noinc((SV*)thingy);
 
         (&vector->element)[z] = 0.0;
@@ -221,7 +211,7 @@ SOM_Vector* _make_vector(SOM_Array* array) {
 }
 
 SOM_Array* _make_array(SOM_Map* map) {
-	IV		y;
+	IV		y,len;
 	AV		*thingy;
 	SV		*tie;
 	HV		*stash;
@@ -229,7 +219,9 @@ SOM_Array* _make_array(SOM_Map* map) {
 
 	y = map->Y;
 
-	Newxz( array, sizeof(SOM_Array) + y * sizeof(SOM_Vector*), void );
+	len = sizeof(SOM_Array)+y*sizeof(SOM_Vector*);
+	Newxc(array, len, char, SOM_Array);
+	Zero(array, len, char);
 
 	array->Y = y;
 	array->Z = map->Z;
@@ -238,7 +230,7 @@ SOM_Array* _make_array(SOM_Map* map) {
 	tie = newRV_noinc(newSViv(PTR2IV(array)));
 	stash = gv_stashpv("AI::NeuralNet::FastSOM::ARRAY", GV_ADD);
 	sv_bless(tie, stash);
-	hv_magic(thingy, tie, PERL_MAGIC_tied);
+	hv_magic((HV*)thingy, (GV*)tie, PERL_MAGIC_tied);
 	array->ref = newRV_noinc((SV*)thingy);
 
 	(&array->vector)[y] = NULL;
@@ -249,7 +241,7 @@ SOM_Array* _make_array(SOM_Map* map) {
 }
 
 SOM_Map* _make_map(SOM_GENERIC *som) {
-	IV	x;
+	IV	x,len;
 	AV	*thingy;
 	SV	*tie;
 	HV	*stash;
@@ -257,7 +249,9 @@ SOM_Map* _make_map(SOM_GENERIC *som) {
 
 	x = som->X;
 
-	Newxz( map, sizeof(SOM_Map) + x * sizeof(SOM_Array*), void );
+	len = sizeof(SOM_Map)+x*sizeof(SOM_Array*);
+	Newxc(map, len, char, SOM_Map);
+	Zero(map, len, char);
 
 	map->X = x;
 	map->Y = som->Y;
@@ -267,7 +261,7 @@ SOM_Map* _make_map(SOM_GENERIC *som) {
 	tie = newRV_noinc(newSViv(PTR2IV(map)));
 	stash = gv_stashpv("AI::NeuralNet::FastSOM::MAP", GV_ADD);
 	sv_bless(tie, stash);
-	hv_magic(thingy, tie, PERL_MAGIC_tied);
+	hv_magic((HV*)thingy, (GV*)tie, PERL_MAGIC_tied);
 	map->ref = newRV_noinc((SV*)thingy);
 
 	(&map->array)[x] = NULL;
@@ -412,7 +406,7 @@ void _som_FREEZE(SV* self,SV* cloning) {
 		som = INT2PTR(SOM_GENERIC*,self2iv(self));
 
 		XPUSHs( newSVpvs("beat me whip me make me code badly") );
-		XPUSHs( newRV_inc(newSViv(som->type)) );
+		XPUSHs( newRV_noinc(newSViv(som->type)) );
 		XPUSHs( newRV_noinc(newSViv(som->X)) );
 		XPUSHs( newRV_noinc(newSViv(som->Y)) );
 		XPUSHs( newRV_noinc(newSViv(som->Z)) );
@@ -490,7 +484,7 @@ void _som_THAW(SV* self,SV* cloning,SV* serialized) {
 			}
 		}
 
-		SvSetSV( SvRV(self), sv_2mortal(newSViv((IV)som)) );
+		SvSetSV( SvRV(self), sv_2mortal(newSViv((IV)PTR2IV(som))) );
 
 		stash = SvSTASH(SvRV(self));
 		som->ref = sv_bless(newRV_inc((SV*)self),stash);
@@ -609,7 +603,7 @@ void _rect_neiguts(SOM_Rect* som,NV sigma,IV X0,IV Y0,NV* n) {
 AV* _rect_neighbors(SV* self,NV sigma,IV X0,IV Y0,...) {
 	IV		x,y,X,Y;
 	NV		distance;
-	AV		*tmp;
+	AV		*tmp,*neighbors;
 	MAGIC		*mg;
 	SOM_GENERIC	*som;
 
@@ -620,7 +614,7 @@ AV* _rect_neighbors(SV* self,NV sigma,IV X0,IV Y0,...) {
 	X = som->X;
 	Y = som->Y;
 
-	AV* neighbors = newAV();
+	neighbors = newAV();
 
 	for ( x=0 ; x<X ; x++ ) {
 		for ( y=0 ; y<Y ; y++ ) {
@@ -663,7 +657,7 @@ void _rect_new(const char* class,...) {
 	if ( !hv_exists( options, "output_dim", 10 ) )
 		croak( "no output_dim argument" );
 
-	Newxz(som, 1, SOM_GENERIC);
+	Newxz(som,1,SOM_GENERIC);
 
 	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
 	som->output_dim = od;
@@ -917,7 +911,7 @@ void _hexa_new(const char* class) {
 	if ( !hv_exists( options, "output_dim", 10 ) )
 		croak( "no ouput_dim argument" );
 
-	Newxz( hexa, 1, SOM_Hexa );
+	Newxz(hexa,1,SOM_Hexa);
 
 	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
 	hexa->output_dim = od;
@@ -929,7 +923,7 @@ void _hexa_new(const char* class) {
 	hexa->R = hexa->X / 2.0;
 
 	if ( hv_exists( options, "sigma0", 6 ) ) {
-		IV sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
+		sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
                 if ( sigma0 )
                         hexa->Sigma0 = sigma0;
                 else
