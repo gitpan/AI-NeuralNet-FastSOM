@@ -1,6 +1,6 @@
 package AI::NeuralNet::FastSOM::Utils;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 # move along. nothing to see here. keep moving...
 

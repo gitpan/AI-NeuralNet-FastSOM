@@ -1,5 +1,14 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.11  Sun Aug  9 10:04:19 2009
+	- casting newSVpvs() to SV* to satisfy at least one platform
+	- added 'const char *' to typemap for older perls
+	- removed a few unneeded casts to internal types
+	- moved DESTROY methods to superclass, thus fixing missing
+	  Hexa::DESTROY and consolidating common code
+	- consolidated neighbors code
+	- general housekeeping
+
 0.10  Fri Aug  7 09:11:39 2009
 	- no longer relying on sizeof(void)
 	- removed a bit of old test code

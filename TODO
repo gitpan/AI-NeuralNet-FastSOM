@@ -1,14 +1,12 @@
 - redo proto.h.. again!
 
-- "cannot take sizeof void"
+- "passing argument 3 of 'Perl_newXS' discards qualifiers
+   from pointer target type"
 
 - test older perls. at least drop version requirement back as far as will
   work with what we have now.
 
 - clean up!
-
-- clean up most instances of newAV() with av_undef().
-  in other words, seek and destroy memory leaks!
 
 - figure out how to call perl's exp(), log() and getpid() functions.
 

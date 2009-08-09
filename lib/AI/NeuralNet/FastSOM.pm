@@ -4,7 +4,9 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
+
+sub new { die 'Dont use this class directly' }
 
 sub label {
 	my ($self, $x, $y, $l) = @_;

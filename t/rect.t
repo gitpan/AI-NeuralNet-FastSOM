@@ -19,7 +19,6 @@ BEGIN { use_ok('AI::NeuralNet::FastSOM::Rect') };
 	my $nn2 = $nn;
 	my $nn3 = $nn2;
 	is( $nn, $nn3, 'rect eq' );
-	is( $nn->refcount(), 3, 'rect refs' );
 
 	my $m1 = $nn->map;
 	isa_ok( $m1, 'ARRAY', 'map array' );
