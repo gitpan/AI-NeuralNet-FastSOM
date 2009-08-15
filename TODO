@@ -1,10 +1,7 @@
-- redo proto.h.. again!
+- skip some tests if Storable not found (for old perls)
 
 - "passing argument 3 of 'Perl_newXS' discards qualifiers
-   from pointer target type"
-
-- test older perls. at least drop version requirement back as far as will
-  work with what we have now.
+   from pointer target type". is this still an issue?
 
 - clean up!
 

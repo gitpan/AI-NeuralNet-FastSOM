@@ -17,7 +17,9 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires a working C compiler.
+A working C compiler.
+
+Storable, which is already installed with newer perls.
 
 COPYRIGHT AND LICENCE
 

@@ -1,5 +1,19 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.12  Sat Aug 15 14:24:50 2009
+	- will now pass -Wall -Wextra -ansi -Wdeclaration-after-statement
+	  (locally anyway)
+	- wrapped newSVpvs in INT2PTR to hopefully satisfy some platforms
+	- bumped perl require back up to 5.8.0 for now
+	- defined PERL_MAGIC_tied for older perls
+	- changed hv_fetchs() to hv_fetch() for older perls
+	- hacked in defines for Newx() and friends for older perls
+	- changed newSVpvs() to newSVpvn() for older perls
+	- created seperate typemap for older perls, along with Makefile.PL
+	  modification to use it before 5.8.0
+	- added requirement for Storable which is non-core in older perls
+	- moved perl require back down to 5.6.2
+
 0.11  Sun Aug  9 10:04:19 2009
 	- casting newSVpvs() to SV* to satisfy at least one platform
 	- added 'const char *' to typemap for older perls

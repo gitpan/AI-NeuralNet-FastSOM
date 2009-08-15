@@ -199,7 +199,7 @@ SOM_Vector* _make_vector(SOM_Array* array) {
         tie = newRV_noinc(newSViv(PTR2IV(vector)));
         stash = gv_stashpv("AI::NeuralNet::FastSOM::VECTOR", GV_ADD);
         sv_bless(tie, stash);
-        hv_magic((HV*)thingy, (GV*)tie, PERL_MAGIC_tied);
+        hv_magic((HV*)thingy, (GV*)tie, 'P');
 	vector->ref = newRV_noinc((SV*)thingy);
 
         (&vector->element)[z] = 0.0;
@@ -290,6 +290,7 @@ void _som_bmu(SV* self, AV* sample) {
 
 	_bmuguts(som,sample,&cx,&cy,&cd);
 
+	PERL_UNUSED_VAR(items); /* -W */
 	sp = mark;
 	XPUSHs(sv_2mortal(newSViv(cx)));
 	XPUSHs(sv_2mortal(newSViv(cy)));
@@ -322,7 +323,7 @@ SV* _som_output_dim(SV* self) {
 }
 
 void _som_train(SV* self,IV epochs) {
-	IV		i,x,y,X,Y,bx,by,epoch;
+	IV		i,X,Y,bx,by,epoch;
 	NV		bd,l,sigma,*n;
 	AV		**org,**veg,*sample;
 	I32		p,pick,nitems,oitems,vitems;
@@ -348,7 +349,7 @@ void _som_train(SV* self,IV epochs) {
 
 	for ( i=2 ; i<items ; i++ )
 		if ( SvTYPE(SvRV(ST(i))) != SVt_PVAV )
-			croak("training item %i is not an array ref", i);
+			croak("training item %i is not an array ref", (int)i);
 		else
 			org[i-2] = (AV*)SvRV(ST(i));
 
@@ -426,6 +427,7 @@ void _som_FREEZE(SV* self,SV* cloning) {
 	SOM_GENERIC	*som;
 	dXSARGS;
 
+	PERL_UNUSED_VAR(items); /* -W */
 	sp = mark;
 
 	if ( !SvTRUE(cloning) ) {
@@ -437,7 +439,7 @@ void _som_FREEZE(SV* self,SV* cloning) {
 		 * serialize the hash seen from perl.
 		 */
 
-		XPUSHs((SV*)newSVpvs("i wanna be a cowboy"));
+		XPUSHs(INT2PTR(SV*,newSVpvn("i wanna be a cowboy",19)));
 
 	}
 	else if ( SvTYPE(SvRV(self)) == SVt_PVMG ) {
@@ -449,7 +451,8 @@ void _som_FREEZE(SV* self,SV* cloning) {
 
 		som = INT2PTR(SOM_GENERIC*,self2iv(self));
 
-		XPUSHs( (SV*)newSVpvs("beat me whip me make me code badly") );
+		XPUSHs( INT2PTR(SV*,newSVpvn(
+				"beat me whip me make me code badly",34)) );
 		XPUSHs( newRV_noinc(newSViv(som->type)) );
 		XPUSHs( newRV_noinc(newSViv(som->X)) );
 		XPUSHs( newRV_noinc(newSViv(som->Y)) );
@@ -491,10 +494,11 @@ void _som_THAW(SV* self,SV* cloning,SV* serialized) {
 	SOM_GENERIC	*som;
 	dXSARGS;
 
-	if ( SvTYPE(SvRV(self)) == SVt_PVHV ) {
-	}
+	PERL_UNUSED_VAR(serialized); /* -W */
 
-	else if ( SvTYPE(SvRV(self)) == SVt_PVMG ) {
+	if (!SvTRUE(cloning)) {
+
+	if ( SvTYPE(SvRV(self)) == SVt_PVMG ) {
 		Newxz(som,1,SOM_GENERIC);
 
 		som->type = SvIV(SvRV(ST(3)));
@@ -535,89 +539,94 @@ void _som_THAW(SV* self,SV* cloning,SV* serialized) {
 
 	}
 
-	else croak("you'll put an eye out!");
+	else if ( SvTYPE(SvRV(self)) != SVt_PVHV )
+		croak("you'll put an eye out!");
 
+	} /* cloning */
+
+	PERL_UNUSED_VAR(items); /* -W */
 	sp = mark;
 	PUTBACK;
 }
 
 SV* _som_FETCH(SV* self,SV* key) {
-	if ( !sv_cmp( key, (SV*)newSVpvs("map") ) ) {
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("map",3) ) ) ) {
 		SOM_GENERIC *som = INT2PTR(SOM_Rect*,self2iv(self));
 		SvREFCNT_inc(som->map->ref);
 		return som->map->ref;
 	}
-	if ( !sv_cmp( key, (SV*)newSVpvs("_X") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_X",2) ) ) )
 		return newSViv(tied2ptr(self)->X);
-	if ( !sv_cmp( key, (SV*)newSVpvs("_Y") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Y",2) ) ) )
 		return newSViv(tied2ptr(self)->Y);
-	if ( !sv_cmp( key, (SV*)newSVpvs("_Z") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Z",2) ) ) )
 		return newSViv(tied2ptr(self)->Z);
-	if ( !sv_cmp( key, (SV*)newSVpvs("_R") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_R",2) ) ) )
 		return newSVnv(tied2ptr(self)->R);
-	if ( !sv_cmp( key, (SV*)newSVpvs("_L0") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_L0",3) ) ) )
 		return newSVnv(tied2ptr(self)->L0);
-	if ( !sv_cmp( key, (SV*)newSVpvs("_Sigma0") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Sigma0",7) ) ) )
 		return newSVnv(tied2ptr(self)->Sigma0);
-	if ( !sv_cmp( key, (SV*)newSVpvs("output_dim") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("output_dim",10) ) ) )
 		return newSVsv(tied2ptr(self)->output_dim);
-	if ( !sv_cmp( key, (SV*)newSVpvs("LAMBDA") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("LAMBDA",6) ) ) )
 		return newSVnv(tied2ptr(self)->LAMBDA);
-	if ( !sv_cmp( key, (SV*)newSVpvs("T") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("T",1) ) ) )
 		return newSVnv(tied2ptr(self)->T);
-	if ( !sv_cmp( key, (SV*)newSVpvs("labels") ) )
+	if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("labels",6) ) ) )
 		return newRV_inc((SV*)(tied2ptr(self)->labels));
 	croak("%s not accessible for read", SvPV_nolen(key));
 }
 
 SV* _som_STORE(SV* self,SV* key,SV* val) {
-        if ( !sv_cmp( key, (SV*)newSVpvs("_X") ) )
+        if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_X",2) ) ) )
 		tied2ptr(self)->X = SvIV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("_Y") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Y",2) ) ) )
                 tied2ptr(self)->Y = SvIV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("_Z") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Z",2) ) ) )
                 tied2ptr(self)->Z = SvIV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("_R") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_R",2) ) ) )
                 tied2ptr(self)->R = SvNV(val);
-	else if ( !sv_cmp( key, (SV*)newSVpvs("_L0") ) )
+	else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_L0",3) ) ) )
 		tied2ptr(self)->L0 = SvNV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("_Sigma0") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("_Sigma0",7) ) ) )
                 tied2ptr(self)->Sigma0 = SvNV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("output_dim") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("output_dim",10) ) ) )
                 tied2ptr(self)->output_dim = newSVsv(val);
-	else if ( !sv_cmp( key, (SV*)newSVpvs("LAMBDA") ) )
+	else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("LAMBDA",6) ) ) )
 		tied2ptr(self)->LAMBDA = SvNV(val);
-	else if ( !sv_cmp( key, (SV*)newSVpvs("T") ) )
+	else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("T",1) ) ) )
 		tied2ptr(self)->T = SvNV(val);
-        else if ( !sv_cmp( key, (SV*)newSVpvs("map") ) )
+        else if ( !sv_cmp( key, INT2PTR(SV*,newSVpvn("map",3) ) ) )
 		croak("cant assign to map");
 	else
 		croak("%s not accessible for write", SvPV_nolen(key));
+	return val;
 }
 
-SV* _som_FIRSTKEY(SV* self) {
-	return (SV*)newSVpvs("_X");
+SV* _som_FIRSTKEY() {
+	return INT2PTR(SV*,newSVpvn("_X",2));
 }
 
-SV* _som_NEXTKEY(SV* self,SV* prev) {
+SV* _som_NEXTKEY(SV* prev) {
         if ( strEQ( SvPVX(prev), "_X" ) )
-                return (SV*)newSVpvs("_Y");
+                return INT2PTR(SV*,newSVpvn("_Y",2));
         else if ( strEQ( SvPVX(prev), "_Y" ) )
-                return (SV*)newSVpvs("_Z");
+                return INT2PTR(SV*,newSVpvn("_Z",2));
         else if ( strEQ( SvPVX(prev), "_Z" ) )
-                return (SV*)newSVpvs("_R");
+                return INT2PTR(SV*,newSVpvn("_R",2));
         else if ( strEQ( SvPVX(prev), "_R" ) )
-                return (SV*)newSVpvs("_Sigma0");
+                return INT2PTR(SV*,newSVpvn("_Sigma0",7));
         else if ( strEQ( SvPVX(prev), "_Sigma0" ) )
-                return (SV*)newSVpvs("_L0");
+                return INT2PTR(SV*,newSVpvn("_L0",3));
         else if ( strEQ( SvPVX(prev), "_L0" ) )
-                return (SV*)newSVpvs("LAMBDA");
+                return INT2PTR(SV*,newSVpvn("LAMBDA",6));
         else if ( strEQ( SvPVX(prev), "LAMBDA" ) )
-                return (SV*)newSVpvs("T");
+                return INT2PTR(SV*,newSVpvn("T",1));
         else if ( strEQ( SvPVX(prev), "T" ) )
-                return (SV*)newSVpvs("labels");
+                return INT2PTR(SV*,newSVpvn("labels",6));
         else if ( strEQ( SvPVX(prev), "labels" ) )
-                return (SV*)newSVpvs("map");
+                return INT2PTR(SV*,newSVpvn("map",3));
         return &PL_sv_undef;
 }
 
@@ -673,7 +682,7 @@ void _rect_new(const char* class,...) {
 	SOM_GENERIC	*som;
 	dXSARGS;
 
-	if ( items & 1 ^ 1 )
+	if ( (items & 1) ^ 1 )
 		croak( "Weird number of arguments\n" );
 
 	options = newHV();
@@ -691,7 +700,7 @@ void _rect_new(const char* class,...) {
 
 	Newxz(som,1,SOM_GENERIC);
 
-	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
+	od = newSVsv(*hv_fetch(options,"output_dim",10,FALSE));
 	som->output_dim = od;
 
 	begptr = SvPV_force(od,SvLEN(od));
@@ -712,14 +721,14 @@ void _rect_new(const char* class,...) {
 			break;
 	som->Y = Atol(++ystart);
 
-	som->Z = SvIV(*hv_fetchs(options,"input_dim",FALSE));
+	som->Z = SvIV(*hv_fetch(options,"input_dim",9,FALSE));
 
 	som->R = som->X > som->Y
 		? som->Y / 2.0
 		: som->X / 2.0;
 
 	if ( hv_exists( options, "sigma0", 6 ) ) {
-		sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
+		sigma0 = SvNV(*hv_fetch(options,"sigma0",6,0));
 		if ( sigma0 )
 			som->Sigma0 = sigma0;
 		else
@@ -729,7 +738,7 @@ void _rect_new(const char* class,...) {
 		som->Sigma0 = som->R;
 
 	if ( hv_exists( options, "learning_rate", 13 ) ) {
-		rate = SvNV(*hv_fetchs(options,"learning_rate",0));
+		rate = SvNV(*hv_fetch(options,"learning_rate",13,0));
 		if ( rate )
 			som->L0 = rate;
 		else
@@ -742,13 +751,16 @@ void _rect_new(const char* class,...) {
 	som->labels = newAV();
 
 	sclass = sv_2mortal(newSVpvf("%s",class));
-	if ( !sv_cmp(sclass,(SV*)newSVpvs("AI::NeuralNet::FastSOM::Rect")) )
+	if (!sv_cmp(sclass,INT2PTR(
+			SV*,newSVpvn("AI::NeuralNet::FastSOM::Rect",28))))
 		som->type = SOMType_Rect;
 	/*
-	else if (!sv_cmp(sclass,(SV*)newSVpvs("AI::NeuralNet::FastSOM::Hexa")))
+	else if (!sv_cmp(sclass,INT2PTR(
+			SV*,newSVpvn("AI::NeuralNet::FastSOM::Hexa",28))))
 		som->type = SOMType_Hexa;
 	*/
-	else if (!sv_cmp(sclass,(SV*)newSVpvs("AI::NeuralNet::FastSOM::Torus")))
+	else if (!sv_cmp(sclass,INT2PTR(
+			SV*,newSVpvn("AI::NeuralNet::FastSOM::Torus",29))))
 		som->type = SOMType_Torus;
 	else
 		croak("unknown type");
@@ -834,14 +846,14 @@ void _torus_neiguts(SOM_Torus* som,NV sigma,IV X0,IV Y0,NV* n) {
 
 void _hexa_new(const char* class) {
 	IV		i;
-	SV		*obj,*obj_ref,*key,*val,*od,*tie,*rv;
+	SV		*key,*val,*od,*tie,*rv;
 	NV		sigma0,rate;
 	HV		*options,*hash,*stash;
 	STRLEN		len;
 	SOM_Hexa	*hexa;
 	dXSARGS;
 
-	if ( items & 1 ^ 1 )
+	if ( (items & 1) ^ 1 )
 		croak( "Weird number of arguments\n" );
 
 	options = newHV();
@@ -859,17 +871,17 @@ void _hexa_new(const char* class) {
 
 	Newxz(hexa,1,SOM_Hexa);
 
-	od = newSVsv(*hv_fetchs( options, "output_dim", FALSE));
+	od = newSVsv(*hv_fetch(options,"output_dim",10,FALSE));
 	hexa->output_dim = od;
 
-	hexa->X=SvIV(*hv_fetchs(options,"output_dim",FALSE));
-	hexa->Z=SvIV(*hv_fetchs(options,"input_dim",FALSE));
+	hexa->X=SvIV(*hv_fetch(options,"output_dim",10,FALSE));
+	hexa->Z=SvIV(*hv_fetch(options,"input_dim",9,FALSE));
 
 	hexa->Y = hexa->X;
 	hexa->R = hexa->X / 2.0;
 
 	if ( hv_exists( options, "sigma0", 6 ) ) {
-		sigma0 = SvNV(*hv_fetchs(options,"sigma0",0));
+		sigma0 = SvNV(*hv_fetch(options,"sigma0",6,0));
                 if ( sigma0 )
                         hexa->Sigma0 = sigma0;
                 else
@@ -879,7 +891,7 @@ void _hexa_new(const char* class) {
                 hexa->Sigma0 = hexa->R;
 
 	if ( hv_exists( options, "learning_rate", 13 ) ) {
-                rate = SvNV(*hv_fetchs(options,"learning_rate",0));
+                rate = SvNV(*hv_fetch(options,"learning_rate",13,0));
                 if ( rate )
                         hexa->L0 = rate;
                 else
@@ -1195,7 +1207,8 @@ SV *
 FIRSTKEY (self)
         SV *    self
         CODE:
-        RETVAL = _som_FIRSTKEY(self);
+	if (!self) croak("avoiding -Wextra");
+        RETVAL = _som_FIRSTKEY();
         ST(0) = RETVAL;
         sv_2mortal(ST(0));
 
@@ -1204,7 +1217,8 @@ NEXTKEY (self,prev)
         SV *    self
         SV *    prev
         CODE:
-        RETVAL = _som_NEXTKEY(self,prev);
+	if (!self) croak("avoiding -Wextra");
+        RETVAL = _som_NEXTKEY(prev);
         ST(0) = RETVAL;
         sv_2mortal(ST(0));
 

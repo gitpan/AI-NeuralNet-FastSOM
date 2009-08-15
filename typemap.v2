@@ -8,7 +8,7 @@ T_AVREF_SPECIAL
 	if (SvROK($arg) && SvTYPE(SvRV($arg))==SVt_PVAV)
 		$var = (AV*)SvRV($arg);
 	else
-		Perl_croak(aTHX_ \"%s: %s is not an array reference\",
+		Perl_croak(aTHX_ \"%s: %s is not a magical array reference\",
 			${$ALIAS?\q[GvNAME(CvGV(cv))]:\qq[\"$pname\"]},
 			\"$var\")
 ###############################################################################

@@ -152,6 +152,26 @@ enum SOMType {
 
 typedef AV AV_SPECIAL;
 
+#ifndef PERL_MAGIC_tied
+#define PERL_MAGIC_tied 'P'
+#endif
+
+#ifndef Newx
+#define Newx(ptr,nitems,type) New(0,ptr,nitems,type)
+#endif
+
+#ifndef Newxc
+#define Newxc(ptr,nitems,type,cast) Newc(0,ptr,nitems,type,cast)
+#endif
+
+#ifndef Newxz
+#define Newxz(ptr,nitems,type) Newz(0,ptr,nitems,type)
+#endif
+
+#ifndef PERL_UNUSED_VAR
+#define PERL_UNUSED_VAR(x) ((void)x)
+#endif
+
 #define selfmg2iv(self,mg) SvIV(SvRV(SvTIED_obj((SV*)SvIV(SvRV(self)),mg)))
 #define self2iv(self) SvIV(SvRV(self))
 
