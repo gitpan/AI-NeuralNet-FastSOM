@@ -1,4 +1,8 @@
-- skip some tests if Storable not found (for old perls)
+- "not a magical array reference" in 5.8.9, 5.8.9p35104
+
+- skip some tests if Storable not found (for old perls).
+  versions ok: 2.20, 2.18
+  perls found in: 5.8.8
 
 - "passing argument 3 of 'Perl_newXS' discards qualifiers
    from pointer target type". is this still an issue?

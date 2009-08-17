@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use XSLoader;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 sub new { die 'Dont use this class directly' }
 
