@@ -1,5 +1,17 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.15  Wed Jul 11 00:13:02 2012
+	- tidy up build a bit
+	- fixed warnings from CODE blocks using RETVAL without OUTPUT
+	  blocks in newer perls
+	- yet another typemap workaround. this time we have a 5.6.2 with
+	  a new ParseXS and an old xsubpp. i wont even mention the problem
+	  i found in old Test::More finding this. i hope it never becomes
+	  an issue. (Note: since this is an almost 3 year old issue and
+	  haven't seen any more cases, we'll assume it was isolated
+	  to a single user to start with and the whole mess is fixed
+	  now.)
+
 0.14  Fri Aug 21 12:52:32 2009
 	- work around some sort of ExtUtils::ParseXS bug in 5.6.2,
 	  not picking up typemap files unless specifically named "typemap"

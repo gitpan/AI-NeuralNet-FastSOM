@@ -1116,17 +1116,21 @@ bmu (self, sample)
 SV *
 map (self)
 	SV *	self
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _som_map(self);
-	ST(0) = RETVAL;
+	rv = _som_map(self);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 SV *
 output_dim (self)
 	SV *	self
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _som_output_dim(self);
-	ST(0) = RETVAL;
+	rv = _som_output_dim(self);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 void
@@ -1182,9 +1186,11 @@ SV *
 FETCH (self, key)
 	SV *    self
 	SV *    key
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _som_FETCH(self, key);
-	ST(0) = RETVAL;
+	rv = _som_FETCH(self, key);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 void
@@ -1206,20 +1212,24 @@ STORE (self, key, val)
 SV *
 FIRSTKEY (self)
         SV *    self
+	PREINIT:
+	SV* rv;
         CODE:
 	if (!self) croak("avoiding -Wextra");
-        RETVAL = _som_FIRSTKEY();
-        ST(0) = RETVAL;
+        rv = _som_FIRSTKEY();
+        ST(0) = rv;
         sv_2mortal(ST(0));
 
 SV *
 NEXTKEY (self,prev)
         SV *    self
         SV *    prev
+	PREINIT:
+	SV* rv;
         CODE:
 	if (!self) croak("avoiding -Wextra");
-        RETVAL = _som_NEXTKEY(prev);
-        ST(0) = RETVAL;
+        rv = _som_NEXTKEY(prev);
+        ST(0) = rv;
         sv_2mortal(ST(0));
 
 void
@@ -1275,9 +1285,11 @@ neighbors (self, sigma, X, Y, ...)
 SV *
 radius (self)
 	SV *	self
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _rect_radius(self);
-	ST(0) = RETVAL;
+	rv = _rect_radius(self);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 
@@ -1350,9 +1362,11 @@ NV
 vector_distance (V1, V2)
 	AV_SPECIAL*	V1;
 	AV_SPECIAL*	V2;
+	PREINIT:
+	NV rv;
 	CODE:
-        RETVAL = _vector_distance((AV*)V1, (AV*)V2);
-        XSprePUSH; PUSHn((NV)RETVAL);
+        rv = _vector_distance((AV*)V1, (AV*)V2);
+        XSprePUSH; PUSHn((NV)rv);
 
 
 
@@ -1365,17 +1379,21 @@ SV *
 FETCH (self, x)
 	SV *	self
 	I32	x
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _map_FETCH(self, x);
-	ST(0) = RETVAL;
+	rv = _map_FETCH(self, x);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 IV
 FETCHSIZE (self)
 	SV *	self
+	PREINIT:
+	IV rv;
 	CODE:
-	RETVAL = (INT2PTR(SOM_Map*,self2iv(self)))->X;
-	XSprePUSH; PUSHi((IV)RETVAL);
+	rv = (INT2PTR(SOM_Map*,self2iv(self)))->X;
+	XSprePUSH; PUSHi((IV)rv);
 
 void
 DESTROY (obj)
@@ -1418,17 +1436,21 @@ SV *
 FETCH (self, y)
 	SV *	self
 	I32	y
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _array_FETCH(self, y);
-	ST(0) = RETVAL;
+	rv = _array_FETCH(self, y);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 IV
 FETCHSIZE (self)
 	SV *	self
+	PREINIT:
+	IV rv;
 	CODE:
-	RETVAL = (INT2PTR(SOM_Array*,self2iv(self)))->Y;
-	XSprePUSH; PUSHi((IV)RETVAL);
+	rv = (INT2PTR(SOM_Array*,self2iv(self)))->Y;
+	XSprePUSH; PUSHi((IV)rv);
 
 void
 DESTROY (obj)
@@ -1471,17 +1493,21 @@ SV *
 FETCH (self, z)
 	SV *	self
 	I32	z
+	PREINIT:
+	SV* rv;
 	CODE:
-	RETVAL = _vector_FETCH(self, z);
-	ST(0) = RETVAL;
+	rv = _vector_FETCH(self, z);
+	ST(0) = rv;
 	sv_2mortal(ST(0));
 
 IV
 FETCHSIZE (self)
 	SV *	self
+	PREINIT:
+	IV rv;
 	CODE:
-	RETVAL = (INT2PTR(SOM_Vector*,self2iv(self)))->Z;
-	XSprePUSH; PUSHi((IV)RETVAL);
+	rv = (INT2PTR(SOM_Vector*,self2iv(self)))->Z;
+	XSprePUSH; PUSHi((IV)rv);
 
 void
 DESTROY (obj)

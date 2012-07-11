@@ -6,7 +6,7 @@ use warnings;
 use AI::NeuralNet::FastSOM;
 our @ISA = qw/AI::NeuralNet::FastSOM/;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 sub radius   { shift->{_R} }
 sub diameter { shift->{_X} }
