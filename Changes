@@ -1,5 +1,10 @@
 Revision history for Perl extension AI::NeuralNet::FastSOM.
 
+0.16  Sat Jan  3 05:53:12 EST 2015
+    - version bump - hasnt been tested in a while...
+    - added auto-README generation to Makefile.PL
+    - update copyright notice
+
 0.15  Wed Jul 11 00:13:02 2012
 	- tidy up build a bit
 	- fixed warnings from CODE blocks using RETVAL without OUTPUT

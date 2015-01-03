@@ -2,15 +2,15 @@ use 5.006002;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-	NAME          => 'AI::NeuralNet::FastSOM',
-	VERSION_FROM  => 'lib/AI/NeuralNet/FastSOM.pm',
-	ABSTRACT_FROM => 'lib/AI/NeuralNet/FastSOM.pm',
-	AUTHOR        => 'Rick Myers <jrm@cpan.org>',
-	LICENSE       => 'perl',
-	PREREQ_PM     => { Storable => 0 },
-	TYPEMAPS      => [ $] < 5.008000 ? 'typemap.v1' : 'typemap.v2' ],
-	test          => { TESTS => 't/*.t t/orig/*.t' },
-	clean         => { FILES => 't/*.bin typemap' },
+    NAME          => 'AI::NeuralNet::FastSOM',
+    VERSION_FROM  => 'lib/AI/NeuralNet/FastSOM.pm',
+    ABSTRACT_FROM => 'lib/AI/NeuralNet/FastSOM.pm',
+    AUTHOR        => 'Rick Myers <jrm@cpan.org>',
+    LICENSE       => 'perl',
+    PREREQ_PM     => { Storable => 0 },
+    TYPEMAPS      => [ $] < 5.008000 ? 'typemap.v1' : 'typemap.v2' ],
+    test          => { TESTS => 't/*.t t/orig/*.t' },
+    clean         => { FILES => 't/*.bin typemap' },
 );
 
 #
@@ -24,21 +24,35 @@ WriteMakefile(
 package MY;
 
 sub xs_c {
-	my $t = shift->SUPER::xs_c(@_);
-	$t =~ s/:/:\n	\$(MAKE) typemap/;
-	$t;
+    my $t = shift->SUPER::xs_c(@_);
+    $t =~ s/:/:\n	\$(MAKE) typemap/;
+    $t;
 }
 
 sub postamble {
-	if ( $] < 5.008000 ) {
-	return <<'EOP';
+    my $out = <<'README';
+readme:
+	pod2text lib/AI/NeuralNet/FastSOM.pm README
+	perl -i -pe's{\\*(\\S+)\\*}{\\1}g' README
+
+README
+
+    if ( $] < 5.008000 ) {
+        $out .= <<'EOP';
 typemap:
 	$(CP) typemap.v1 typemap
 EOP
-	}
-	return <<'EOP';
+    }
+
+    else {
+        $out .= <<'EOP';
 typemap:
 	$(CP) typemap.v2 typemap
 EOP
+    }
+
+    return $out;
 }
+
+exit 0;
 

@@ -1,22 +1,22 @@
---- #YAML:1.0
-name:               AI-NeuralNet-FastSOM
-version:            0.15
-abstract:           Perl extension for fast Kohonen Maps
+---
+abstract: 'Perl extension for fast Kohonen Maps'
 author:
-    - Rick Myers <jrm@cpan.org>
-license:            perl
-distribution_type:  module
-configure_requires:
-    ExtUtils::MakeMaker:  0
+  - 'Rick Myers <jrm@cpan.org>'
 build_requires:
-    ExtUtils::MakeMaker:  0
-requires:
-    Storable:  0
-no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.56
+  ExtUtils::MakeMaker: '0'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.142690'
+license: perl
 meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: AI-NeuralNet-FastSOM
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Storable: '0'
+version: '0.16'
